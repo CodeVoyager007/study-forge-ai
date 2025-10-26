@@ -8,6 +8,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sparkles, Save, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Essay {
+  title: string;
+  content: string;
+  citations: string[];
+  outline: string[];
+}
 
 const GenerateEssay = () => {
   const [topic, setTopic] = useState("");
@@ -16,9 +24,10 @@ const GenerateEssay = () => {
   const [wordCount, setWordCount] = useState("500");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [essay, setEssay] = useState<Essay | null>(null);
   const { toast } = useToast();
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!topic.trim()) {
       toast({
         title: "Topic Required",
@@ -29,14 +38,64 @@ const GenerateEssay = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-essay', {
+        body: { topic: topic.trim(), essayType, wordCount: parseInt(wordCount) || 500 }
+      });
+
+      if (error) throw error;
+
+      if (!data?.essay) {
+        throw new Error("No essay generated");
+      }
+
+      setEssay(data.essay);
       setGenerated(true);
-      setLoading(false);
+
       toast({
         title: "Essay Generated!",
         description: `Created ${essayType} essay on ${topic}`,
       });
-    }, 2000);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate essay",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!essay) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase.from("generated_materials").insert([{
+        user_id: user.id,
+        title: `Essay: ${topic}`,
+        type: "essay",
+        content: { essay } as any,
+        metadata: { topic, essayType, wordCount } as any
+      }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Saved Successfully",
+        description: "Essay saved to your dashboard",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -135,19 +194,42 @@ const GenerateEssay = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Your Essay</h2>
-                <Button onClick={() => {}} variant="outline">
+                <Button onClick={handleSave} variant="outline">
                   <Save className="mr-2 h-4 w-4" />
                   Save to Dashboard
                 </Button>
               </div>
 
-              <Card className="p-8 bg-card border-border">
-                <div className="prose prose-invert max-w-none">
-                  <p className="text-muted-foreground">Essay content will appear here after AI generation is implemented with Lovable Cloud.</p>
-                </div>
-              </Card>
+              {essay && (
+                <>
+                  <Card className="p-8 bg-card border-border space-y-4">
+                    <h3 className="text-2xl font-bold">{essay.title}</h3>
+                    
+                    <div className="prose prose-invert max-w-none">
+                      {essay.content.split('\n\n').map((paragraph, idx) => (
+                        <p key={idx} className="mb-4 text-foreground/90 leading-relaxed">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  </Card>
 
-              <Button onClick={() => setGenerated(false)} variant="outline" className="w-full">
+                  {essay.citations && essay.citations.length > 0 && (
+                    <Card className="p-6 bg-card border-border">
+                      <h4 className="font-semibold text-lg mb-3">References</h4>
+                      <ul className="space-y-2">
+                        {essay.citations.map((citation, idx) => (
+                          <li key={idx} className="text-sm text-muted-foreground">
+                            {citation}
+                          </li>
+                        ))}
+                      </ul>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              <Button onClick={() => { setGenerated(false); setEssay(null); }} variant="outline" className="w-full">
                 Generate New Essay
               </Button>
             </div>

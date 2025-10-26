@@ -1,1 +1,13 @@
 project_id = "lxyylogzdgwobreimyzv"
+
+[functions.generate-mcqs]
+verify_jwt = true
+
+[functions.generate-essay]
+verify_jwt = true
+
+[functions.generate-flashcards]
+verify_jwt = true
+
+[functions.generate-summary]
+verify_jwt = true

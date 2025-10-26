@@ -8,6 +8,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sparkles, Save, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Summary {
+  title: string;
+  content: string | string[];
+  keyPoints: string[];
+  tags: string[];
+}
 
 const GenerateSummary = () => {
   const [topic, setTopic] = useState("");
@@ -16,9 +24,10 @@ const GenerateSummary = () => {
   const [format, setFormat] = useState("paragraphs");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState<Summary | null>(null);
   const { toast } = useToast();
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!topic.trim()) {
       toast({
         title: "Topic Required",
@@ -29,14 +38,64 @@ const GenerateSummary = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-summary', {
+        body: { topic: topic.trim(), length, format: format === "bullet" ? "bullet" : "paragraph" }
+      });
+
+      if (error) throw error;
+
+      if (!data?.summary) {
+        throw new Error("No summary generated");
+      }
+
+      setSummary(data.summary);
       setGenerated(true);
-      setLoading(false);
+
       toast({
         title: "Summary Generated!",
         description: `Created ${length} summary on ${topic}`,
       });
-    }, 2000);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate summary",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!summary) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase.from("generated_materials").insert([{
+        user_id: user.id,
+        title: `Summary: ${topic}`,
+        type: "summary",
+        content: { summary } as any,
+        metadata: { topic, length, format } as any
+      }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Saved Successfully",
+        description: "Summary saved to your dashboard",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -137,19 +196,51 @@ const GenerateSummary = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Your Summary</h2>
-                <Button variant="outline">
+                <Button onClick={handleSave} variant="outline">
                   <Save className="mr-2 h-4 w-4" />
                   Save
                 </Button>
               </div>
 
-              <Card className="p-8 bg-card border-border">
-                <div className="prose prose-invert max-w-none">
-                  <p className="text-muted-foreground">Summary will appear here after generation.</p>
-                </div>
-              </Card>
+              {summary && (
+                <>
+                  <Card className="p-8 bg-card border-border space-y-4">
+                    <h3 className="text-2xl font-bold">{summary.title}</h3>
+                    
+                    <div className="prose prose-invert max-w-none">
+                      {Array.isArray(summary.content) ? (
+                        <ul className="space-y-2">
+                          {summary.content.map((point, idx) => (
+                            <li key={idx} className="text-foreground/90">{point}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        summary.content.split('\n\n').map((paragraph, idx) => (
+                          <p key={idx} className="mb-4 text-foreground/90 leading-relaxed">
+                            {paragraph}
+                          </p>
+                        ))
+                      )}
+                    </div>
+                  </Card>
 
-              <Button onClick={() => setGenerated(false)} variant="outline" className="w-full">
+                  {summary.keyPoints && summary.keyPoints.length > 0 && (
+                    <Card className="p-6 bg-card border-border">
+                      <h4 className="font-semibold text-lg mb-3">Key Takeaways</h4>
+                      <ul className="space-y-2">
+                        {summary.keyPoints.map((point, idx) => (
+                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="text-primary mt-1">•</span>
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              <Button onClick={() => { setGenerated(false); setSummary(null); }} variant="outline" className="w-full">
                 Generate New Summary
               </Button>
             </div>

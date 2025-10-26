@@ -42,21 +42,24 @@ const GenerateMCQ = () => {
     setLoading(true);
 
     try {
-      const generatedMCQs: MCQ[] = Array.from({ length: numQuestions[0] }, (_, i) => ({
-        question: `Sample question ${i + 1} about ${topic}?`,
-        options: ["Option A", "Option B", "Option C", "Option D"],
-        correct: Math.floor(Math.random() * 4),
-        explanation: `Explanation for question ${i + 1} about ${topic}.`
-      }));
+      const { data, error } = await supabase.functions.invoke('generate-mcqs', {
+        body: { topic: topic.trim(), difficulty, numQuestions: numQuestions[0] }
+      });
 
-      setMcqs(generatedMCQs);
+      if (error) throw error;
+
+      if (!data?.mcqs || data.mcqs.length === 0) {
+        throw new Error("No MCQs generated");
+      }
+
+      setMcqs(data.mcqs);
       setGenerated(true);
       setSubmitted(false);
       setUserAnswers({});
 
       toast({
         title: "MCQs Generated!",
-        description: `Created ${numQuestions[0]} questions on ${topic}`,
+        description: `Created ${data.mcqs.length} questions on ${topic}`,
       });
     } catch (error: any) {
       toast({

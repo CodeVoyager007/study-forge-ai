@@ -7,23 +7,26 @@ import { Slider } from "@/components/ui/slider";
 import { Sparkles, Save, ArrowLeft, RotateCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+interface Flashcard {
+  front: string;
+  back: string;
+  category?: string;
+}
 
 const GenerateFlashcards = () => {
   const [topic, setTopic] = useState("");
   const [numCards, setNumCards] = useState([20]);
+  const [difficulty, setDifficulty] = useState("medium");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [flipped, setFlipped] = useState<number[]>([]);
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const { toast } = useToast();
 
-  // Mock flashcards
-  const mockFlashcards = [
-    { front: "What is photosynthesis?", back: "The process by which plants convert light energy into chemical energy (glucose) using chlorophyll." },
-    { front: "Define osmosis", back: "The movement of water molecules across a semi-permeable membrane from an area of high concentration to low concentration." },
-    { front: "What is mitosis?", back: "A type of cell division that results in two daughter cells, each with the same number of chromosomes as the parent cell." },
-  ];
-
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!topic.trim()) {
       toast({
         title: "Topic Required",
@@ -34,14 +37,35 @@ const GenerateFlashcards = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-flashcards', {
+        body: { topic: topic.trim(), numCards: numCards[0], difficulty }
+      });
+
+      if (error) throw error;
+
+      if (!data?.flashcards || data.flashcards.length === 0) {
+        throw new Error("No flashcards generated");
+      }
+
+      setFlashcards(data.flashcards);
       setGenerated(true);
-      setLoading(false);
+      setFlipped([]);
+
       toast({
         title: "Flashcards Generated!",
-        description: `Created ${numCards[0]} flashcards on ${topic}`,
+        description: `Created ${data.flashcards.length} flashcards on ${topic}`,
       });
-    }, 2000);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate flashcards",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleFlip = (index: number) => {
@@ -52,11 +76,33 @@ const GenerateFlashcards = () => {
     );
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Saved Successfully",
-      description: "Flashcards saved to your dashboard",
-    });
+  const handleSave = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase.from("generated_materials").insert([{
+        user_id: user.id,
+        title: `Flashcards: ${topic}`,
+        type: "flashcards",
+        difficulty,
+        content: { flashcards } as any,
+        metadata: { topic, numCards: numCards[0] } as any
+      }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Saved Successfully",
+        description: "Flashcards saved to your dashboard",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -135,7 +181,7 @@ const GenerateFlashcards = () => {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
-                  {mockFlashcards.map((card, index) => (
+                  {flashcards.map((card, index) => (
                     <div
                       key={index}
                       onClick={() => toggleFlip(index)}
@@ -163,7 +209,7 @@ const GenerateFlashcards = () => {
                 </div>
 
                 <Button
-                  onClick={() => setGenerated(false)}
+                  onClick={() => { setGenerated(false); setFlashcards([]); }}
                   variant="outline"
                   className="w-full"
                 >
