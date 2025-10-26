@@ -4,7 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Landing from "./pages/Landing";
+import Auth from "./pages/Auth";
 import Generate from "./pages/Generate";
 import GenerateMCQ from "./pages/GenerateMCQ";
 import GenerateFlashcards from "./pages/GenerateFlashcards";
@@ -28,30 +31,20 @@ const App = () => (
         <Navbar />
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/generate" element={<Generate />} />
-          <Route path="/generate/mcqs" element={<GenerateMCQ />} />
-          <Route path="/generate/flashcards" element={<GenerateFlashcards />} />
-          <Route path="/generate/summary" element={<GenerateSummary />} />
-          <Route path="/generate/essay" element={<GenerateEssay />} />
-          <Route path="/generate/diagram" element={<GenerateDiagram />} />
-          <Route path="/generate/vocabulary" element={<GenerateVocabulary />} />
-          <Route path="/generate/formulas" element={<GenerateFormulas />} />
-          {/* Placeholder routes for remaining generators */}
-          <Route path="/generate/qna" element={<GenerateMCQ />} />
-          <Route path="/generate/schedule" element={<GenerateMCQ />} />
-          <Route path="/generate/notes" element={<GenerateMCQ />} />
-          <Route path="/generate/transcript" element={<GenerateMCQ />} />
-          <Route path="/generate/case-study" element={<GenerateMCQ />} />
-          <Route path="/generate/memory-palace" element={<GenerateMCQ />} />
-          <Route path="/generate/debate" element={<GenerateMCQ />} />
-          <Route path="/generate/comparison" element={<GenerateMCQ />} />
-          <Route path="/generate/true-false" element={<GenerateMCQ />} />
-          <Route path="/generate/fill-blanks" element={<GenerateMCQ />} />
-          <Route path="/generate/mnemonics" element={<GenerateMCQ />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/generate" element={<ProtectedRoute><Generate /></ProtectedRoute>} />
+          <Route path="/generate/mcqs" element={<ProtectedRoute><GenerateMCQ /></ProtectedRoute>} />
+          <Route path="/generate/flashcards" element={<ProtectedRoute><GenerateFlashcards /></ProtectedRoute>} />
+          <Route path="/generate/summary" element={<ProtectedRoute><GenerateSummary /></ProtectedRoute>} />
+          <Route path="/generate/essay" element={<ProtectedRoute><GenerateEssay /></ProtectedRoute>} />
+          <Route path="/generate/diagram" element={<ProtectedRoute><GenerateDiagram /></ProtectedRoute>} />
+          <Route path="/generate/vocabulary" element={<ProtectedRoute><GenerateVocabulary /></ProtectedRoute>} />
+          <Route path="/generate/formulas" element={<ProtectedRoute><GenerateFormulas /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <Footer />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

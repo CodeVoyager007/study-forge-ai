@@ -5,9 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
-import { Sparkles, Save, ArrowLeft } from "lucide-react";
+import { Sparkles, Save, ArrowLeft, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface MCQ {
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
+}
 
 const GenerateMCQ = () => {
   const [topic, setTopic] = useState("");
@@ -15,35 +23,13 @@ const GenerateMCQ = () => {
   const [numQuestions, setNumQuestions] = useState([10]);
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [mcqs, setMcqs] = useState<MCQ[]>([]);
+  const [userAnswers, setUserAnswers] = useState<{ [key: number]: number }>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [score, setScore] = useState(0);
   const { toast } = useToast();
 
-  // Mock generated MCQs
-  const mockMCQs = [
-    {
-      question: "What is the primary function of mitochondria in a cell?",
-      options: [
-        "Protein synthesis",
-        "Energy production (ATP synthesis)",
-        "DNA replication",
-        "Lipid storage"
-      ],
-      correct: 1,
-      explanation: "Mitochondria are known as the powerhouse of the cell because they generate ATP through cellular respiration."
-    },
-    {
-      question: "Which organelle is responsible for photosynthesis in plant cells?",
-      options: [
-        "Nucleus",
-        "Chloroplast",
-        "Ribosome",
-        "Golgi apparatus"
-      ],
-      correct: 1,
-      explanation: "Chloroplasts contain chlorophyll and are the site of photosynthesis, converting light energy into chemical energy."
-    }
-  ];
-
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!topic.trim()) {
       toast({
         title: "Topic Required",
@@ -54,22 +40,86 @@ const GenerateMCQ = () => {
     }
 
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      const generatedMCQs: MCQ[] = Array.from({ length: numQuestions[0] }, (_, i) => ({
+        question: `Sample question ${i + 1} about ${topic}?`,
+        options: ["Option A", "Option B", "Option C", "Option D"],
+        correct: Math.floor(Math.random() * 4),
+        explanation: `Explanation for question ${i + 1} about ${topic}.`
+      }));
+
+      setMcqs(generatedMCQs);
       setGenerated(true);
-      setLoading(false);
+      setSubmitted(false);
+      setUserAnswers({});
+
       toast({
         title: "MCQs Generated!",
         description: `Created ${numQuestions[0]} questions on ${topic}`,
       });
-    }, 2000);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate MCQs",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Saved Successfully",
-      description: "MCQs saved to your dashboard",
+  const handleSubmit = () => {
+    if (Object.keys(userAnswers).length !== mcqs.length) {
+      toast({
+        title: "Incomplete",
+        description: "Please answer all questions",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    let correctCount = 0;
+    mcqs.forEach((mcq, index) => {
+      if (userAnswers[index] === mcq.correct) correctCount++;
     });
+
+    setScore(correctCount);
+    setSubmitted(true);
+
+    toast({
+      title: "Submitted!",
+      description: `Score: ${correctCount}/${mcqs.length}`,
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase.from("generated_materials").insert([{
+        user_id: user.id,
+        title: `MCQs: ${topic}`,
+        type: "mcqs",
+        difficulty,
+        content: { mcqs, userAnswers, score } as any,
+        metadata: { topic, numQuestions: numQuestions[0] } as any
+      }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Saved Successfully",
+        description: "MCQs saved to your dashboard",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -157,50 +207,107 @@ const GenerateMCQ = () => {
             <>
               {/* Generated MCQs */}
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">Your MCQs</h2>
-                  <Button onClick={handleSave} variant="outline">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save to Dashboard
-                  </Button>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold">Your MCQs</h2>
+                    {submitted && (
+                      <p className="text-lg text-muted-foreground mt-1">
+                        Score: <span className="text-primary font-semibold">{score}/{mcqs.length}</span>
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    {!submitted && (
+                      <Button onClick={handleSubmit} className="bg-primary hover:bg-primary-glow">
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Submit Answers
+                      </Button>
+                    )}
+                    {submitted && (
+                      <Button onClick={handleSave} variant="outline">
+                        <Save className="mr-2 h-4 w-4" />
+                        Save to Dashboard
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
-                {mockMCQs.map((mcq, index) => (
+                {mcqs.map((mcq, index) => (
                   <Card key={index} className="p-6 bg-card border-border">
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold">
                         Question {index + 1}: {mcq.question}
                       </h3>
                       
-                      <RadioGroup>
-                        {mcq.options.map((option, optIndex) => (
-                          <div 
-                            key={optIndex}
-                            className={`flex items-center space-x-2 p-3 rounded-lg ${
-                              optIndex === mcq.correct 
-                                ? 'bg-primary/10 border border-primary/30' 
-                                : 'bg-secondary/50'
-                            }`}
-                          >
-                            <RadioGroupItem value={optIndex.toString()} id={`q${index}-opt${optIndex}`} />
-                            <Label htmlFor={`q${index}-opt${optIndex}`} className="font-normal cursor-pointer flex-1">
-                              {option}
-                            </Label>
-                          </div>
-                        ))}
+                      <RadioGroup 
+                        value={userAnswers[index]?.toString()}
+                        onValueChange={(value) => {
+                          if (!submitted) {
+                            setUserAnswers(prev => ({ ...prev, [index]: parseInt(value) }));
+                          }
+                        }}
+                        disabled={submitted}
+                      >
+                        {mcq.options.map((option, optIndex) => {
+                          const isUserAnswer = userAnswers[index] === optIndex;
+                          const isCorrect = optIndex === mcq.correct;
+                          const showResult = submitted;
+
+                          let bgClass = 'bg-secondary/50';
+                          if (showResult) {
+                            if (isCorrect) {
+                              bgClass = 'bg-primary/10 border border-primary/30';
+                            } else if (isUserAnswer && !isCorrect) {
+                              bgClass = 'bg-destructive/10 border border-destructive/30';
+                            }
+                          } else if (isUserAnswer) {
+                            bgClass = 'bg-primary/10 border border-primary/30';
+                          }
+
+                          return (
+                            <div 
+                              key={optIndex}
+                              className={`flex items-center space-x-2 p-3 rounded-lg transition-colors ${bgClass}`}
+                            >
+                              <RadioGroupItem 
+                                value={optIndex.toString()} 
+                                id={`q${index}-opt${optIndex}`}
+                                disabled={submitted}
+                              />
+                              <Label 
+                                htmlFor={`q${index}-opt${optIndex}`} 
+                                className="font-normal cursor-pointer flex-1"
+                              >
+                                {option}
+                                {showResult && isCorrect && (
+                                  <span className="ml-2 text-primary font-semibold">✓</span>
+                                )}
+                                {showResult && isUserAnswer && !isCorrect && (
+                                  <span className="ml-2 text-destructive font-semibold">✗</span>
+                                )}
+                              </Label>
+                            </div>
+                          );
+                        })}
                       </RadioGroup>
 
-                      <div className="pt-2 border-t border-border">
-                        <p className="text-sm text-muted-foreground">
-                          <span className="font-semibold text-primary">Explanation:</span> {mcq.explanation}
-                        </p>
-                      </div>
+                      {submitted && (
+                        <div className="pt-2 border-t border-border">
+                          <p className="text-sm text-muted-foreground">
+                            <span className="font-semibold text-primary">Explanation:</span> {mcq.explanation}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </Card>
                 ))}
 
                 <Button
-                  onClick={() => setGenerated(false)}
+                  onClick={() => {
+                    setGenerated(false);
+                    setSubmitted(false);
+                    setUserAnswers({});
+                  }}
                   variant="outline"
                   className="w-full"
                 >

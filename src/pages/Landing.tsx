@@ -1,9 +1,24 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Brain, Zap, BookOpen, Target, Lightbulb, ArrowRight } from "lucide-react";
+import { Sparkles, Brain, Zap, BookOpen, Target, Lightbulb, ArrowRight, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 const Landing = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session) {
+        navigate("/generate");
+      }
+    });
+  }, [navigate]);
+
   const features = [
     {
       icon: Brain,
@@ -17,23 +32,23 @@ const Landing = () => {
     },
     {
       icon: BookOpen,
-      title: "Multiple Formats",
-      description: "MCQs, flashcards, summaries, mind maps, and more - all in one place",
+      title: "18+ Formats",
+      description: "MCQs, flashcards, summaries, essays, diagrams, and more - all in one place",
     },
     {
       icon: Target,
-      title: "Adaptive Learning",
-      description: "Smart recommendations based on your progress and study patterns",
+      title: "Real-Time Tracking",
+      description: "Monitor your progress with detailed analytics and study history",
     },
   ];
 
   const tools = [
     { name: "MCQ Generator", desc: "Practice with auto-generated questions" },
     { name: "Flashcards", desc: "Memorable cards with flip animations" },
-    { name: "Summary Generator", desc: "Concise topic overviews" },
-    { name: "Mind Maps", desc: "Visual concept connections" },
-    { name: "Study Guides", desc: "Comprehensive learning resources" },
-    { name: "Practice Tests", desc: "Timed assessments with scoring" },
+    { name: "Essay Writer", desc: "AI-powered essay generation with citations" },
+    { name: "Diagram Creator", desc: "Visual flowcharts and timelines" },
+    { name: "Vocabulary Builder", desc: "Spaced repetition learning" },
+    { name: "Formula Sheets", desc: "Subject-specific equations" },
   ];
 
   return (
@@ -51,37 +66,59 @@ const Landing = () => {
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              Transform Any Topic Into
-              <span className="gradient-text block mt-2">Perfect Study Materials</span>
+              Master Any Subject with
+              <span className="gradient-text block mt-2">Smart Study Materials</span>
             </h1>
             
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Generate personalized MCQs, flashcards, summaries, and more in seconds. 
-              Let AI handle the prep work while you focus on learning.
+              Generate personalized MCQs, flashcards, summaries, essays, and 14+ more study formats. 
+              Transform any topic into comprehensive learning materials in seconds.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-              <Link to="/generate">
-                <Button size="lg" className="bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all text-lg px-8 h-14">
-                  Start Generating
-                  <ArrowRight className="ml-2 h-5 w-5" />
+              <Link to="/auth">
+                <Button size="lg" className="bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all text-lg px-8 h-14 group">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Start Learning Free
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link to="/dashboard">
-                <Button size="lg" variant="outline" className="text-lg px-8 h-14 border-border hover:border-primary/50 hover:bg-secondary">
-                  View Dashboard
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8 h-14 border-border hover:border-primary/50 hover:bg-secondary"
+                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <BookOpen className="mr-2 h-5 w-5" />
+                Explore Tools
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-8 pt-8 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-primary" />
+                <span>No credit card required</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-primary" />
+                <span>18+ AI Tools</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-primary" />
+                <span>Unlimited generations</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 relative">
+      <section id="features" className="py-20 relative">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl md:text-5xl font-bold">Why StudyForge AI?</h2>
+            <h2 className="text-3xl md:text-5xl font-bold">
+              <span className="gradient-text">Why StudyForge AI?</span>
+            </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Experience the future of studying with AI-powered tools designed for success
             </p>
@@ -139,9 +176,9 @@ const Landing = () => {
           
           <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
             {[
-              { step: "01", title: "Choose Format", desc: "Select from MCQs, flashcards, summaries, and more" },
-              { step: "02", title: "Enter Topic", desc: "Input any subject or concept you want to learn" },
-              { step: "03", title: "Start Learning", desc: "Get instant AI-generated study materials" },
+              { step: "01", title: "Create Account", desc: "Sign up with email verification for secure access" },
+              { step: "02", title: "Choose & Generate", desc: "Select format and enter your topic to generate materials" },
+              { step: "03", title: "Study & Track", desc: "Learn with AI materials and monitor your progress" },
             ].map((item, index) => (
               <div key={index} className="text-center space-y-4">
                 <div className="text-4xl font-bold text-primary-glow">{item.step}</div>
@@ -161,9 +198,9 @@ const Landing = () => {
             <div className="relative z-10 space-y-6">
               <h2 className="text-3xl md:text-5xl font-bold">Ready to Study Smarter?</h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Join thousands of students using AI to ace their exams
+                Join thousands of students using AI to ace their exams with personalized study materials
               </p>
-              <Link to="/generate">
+              <Link to="/auth">
                 <Button size="lg" className="bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all text-lg px-8 h-14">
                   Get Started Free
                   <ArrowRight className="ml-2 h-5 w-5" />

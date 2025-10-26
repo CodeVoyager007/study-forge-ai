@@ -1,11 +1,38 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Sparkles, Menu, X, LogOut, User as UserIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    });
+    navigate("/");
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -22,38 +49,55 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
-            <Link
-              to="/generate"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/generate") ? "text-primary" : "text-foreground/80"
-              }`}
-            >
-              Generate
-            </Link>
-            <Link
-              to="/dashboard"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/dashboard") ? "text-primary" : "text-foreground/80"
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/profile"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/profile") ? "text-primary" : "text-foreground/80"
-              }`}
-            >
-              Profile
-            </Link>
-          </div>
+          {user && (
+            <div className="hidden md:flex items-center gap-6">
+              <Link
+                to="/generate"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive("/generate") ? "text-primary" : "text-foreground/80"
+                }`}
+              >
+                Generate
+              </Link>
+              <Link
+                to="/dashboard"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive("/dashboard") ? "text-primary" : "text-foreground/80"
+                }`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/profile"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive("/profile") ? "text-primary" : "text-foreground/80"
+                }`}
+              >
+                Profile
+              </Link>
+            </div>
+          )}
 
           {/* CTA Button */}
-          <div className="hidden md:block">
-            <Button className="bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all">
-              Get Started
-            </Button>
+          <div className="hidden md:flex items-center gap-3">
+            {user ? (
+              <>
+                <Button variant="ghost" size="sm">
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  {user.email?.split("@")[0]}
+                </Button>
+                <Button onClick={handleLogout} variant="outline" size="sm">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Link to="/auth">
+                <Button className="bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all">
+                  Get Started
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -70,30 +114,45 @@ const Navbar = () => {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border/40 bg-card/95 backdrop-blur-xl">
           <div className="container mx-auto px-4 py-4 space-y-4">
-            <Link
-              to="/generate"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
-            >
-              Generate
-            </Link>
-            <Link
-              to="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/profile"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
-            >
-              Profile
-            </Link>
-            <Button className="w-full bg-primary hover:bg-primary-glow">
-              Get Started
-            </Button>
+            {user ? (
+              <>
+                <Link
+                  to="/generate"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
+                >
+                  Generate
+                </Link>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
+                >
+                  Profile
+                </Link>
+                <Button 
+                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }} 
+                  variant="outline" 
+                  className="w-full justify-start"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="w-full bg-primary hover:bg-primary-glow">
+                  Get Started
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       )}
