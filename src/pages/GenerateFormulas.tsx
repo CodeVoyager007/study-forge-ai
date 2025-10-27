@@ -1,35 +1,76 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Sparkles, Save, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Card } from "@/components/ui/card";
+import { Loader2, Calculator, Download, ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Link } from "react-router-dom";
 
 const GenerateFormulas = () => {
-  const [subject, setSubject] = useState("physics");
-  const [generated, setGenerated] = useState(false);
+  const [topic, setTopic] = useState("");
+  const [difficulty, setDifficulty] = useState("medium");
   const [loading, setLoading] = useState(false);
+  const [formulas, setFormulas] = useState<any>(null);
   const { toast } = useToast();
 
-  const handleGenerate = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setGenerated(true);
-      setLoading(false);
+  const handleGenerate = async () => {
+    if (!topic.trim()) {
       toast({
-        title: "Formula Sheet Generated!",
-        description: `Created formula sheet for ${subject}`,
+        title: "Error",
+        description: "Please enter a topic",
+        variant: "destructive",
       });
-    }, 2000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-formulas', {
+        body: { topic, difficulty }
+      });
+
+      if (error) throw error;
+
+      const parsedContent = JSON.parse(data.content);
+      setFormulas(parsedContent);
+
+      // Save to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('generated_materials').insert({
+          user_id: user.id,
+          type: 'formulas',
+          title: `Formulas: ${topic}`,
+          content: parsedContent,
+          difficulty,
+          metadata: { topic }
+        });
+      }
+
+      toast({
+        title: "Success",
+        description: "Formula sheet generated successfully!",
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate formulas",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen pt-24 pb-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto space-y-8">
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in-down">
             <Link to="/generate">
               <Button variant="ghost" size="sm" className="mb-4">
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -37,70 +78,133 @@ const GenerateFormulas = () => {
               </Button>
             </Link>
             <h1 className="text-4xl md:text-5xl font-bold">
-              <span className="gradient-text">Formula Sheet Generator</span>
+              <span className="gradient-text">Formula Sheets</span>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Get subject-specific formulas with explanations and examples
+              Generate comprehensive formula sheets for any subject
             </p>
           </div>
 
-          {!generated ? (
-            <Card className="p-8 bg-card border-border space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Subject</Label>
-                  <RadioGroup value={subject} onValueChange={setSubject}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="physics" id="physics" />
-                      <Label htmlFor="physics" className="font-normal cursor-pointer">Physics</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="chemistry" id="chemistry" />
-                      <Label htmlFor="chemistry" className="font-normal cursor-pointer">Chemistry</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="mathematics" id="mathematics" />
-                      <Label htmlFor="mathematics" className="font-normal cursor-pointer">Mathematics</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="statistics" id="statistics" />
-                      <Label htmlFor="statistics" className="font-normal cursor-pointer">Statistics</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+          <Card className="p-8 card-elegant border-border/50 animate-scale-in">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="topic">Subject or Topic</Label>
+                <Input
+                  id="topic"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="e.g., Calculus, Physics Mechanics, Chemistry Equations"
+                  className="bg-background/50 border-border/50 focus:border-primary"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Difficulty Level</Label>
+                <Select value={difficulty} onValueChange={setDifficulty}>
+                  <SelectTrigger className="bg-background/50 border-border/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <Button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="w-full bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all h-12"
+                className="w-full bg-gradient-to-r from-primary to-primary-glow hover:shadow-glow-lg transition-all"
               >
-                {loading ? "Generating..." : (
+                {loading ? (
                   <>
-                    <Sparkles className="mr-2 h-5 w-5" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Calculator className="mr-2 h-4 w-4" />
                     Generate Formula Sheet
                   </>
                 )}
               </Button>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Formula Sheet</h2>
-                <Button variant="outline">
-                  <Save className="mr-2 h-4 w-4" />
-                  Save
-                </Button>
-              </div>
-
-              <Card className="p-8 bg-card border-border">
-                <p className="text-muted-foreground">Formula sheet content will appear here.</p>
-              </Card>
-
-              <Button onClick={() => setGenerated(false)} variant="outline" className="w-full">
-                Generate New Sheet
-              </Button>
             </div>
+          </Card>
+
+          {formulas && (
+            <Card className="p-8 card-elegant border-border/50 animate-fade-in">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">{formulas.title || `${topic} Formulas`}</h2>
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export PDF
+                  </Button>
+                </div>
+
+                {formulas.categories?.map((category: any, catIndex: number) => (
+                  <div key={catIndex} className="space-y-4">
+                    <h3 className="text-xl font-semibold text-primary">{category.name}</h3>
+                    
+                    <div className="grid gap-4">
+                      {category.formulas?.map((formula: any, formulaIndex: number) => (
+                        <Card key={formulaIndex} className="p-6 bg-secondary/30 border-border/50">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <h4 className="text-lg font-semibold">{formula.name}</h4>
+                            </div>
+                            
+                            <div className="p-4 rounded-lg bg-background/50 font-mono text-center text-lg">
+                              {formula.formula}
+                            </div>
+                            
+                            {formula.variables && (
+                              <div className="space-y-2">
+                                <p className="font-semibold text-sm text-muted-foreground">Where:</p>
+                                <div className="space-y-1 text-sm">
+                                  {Object.entries(formula.variables).map(([key, value]: [string, any]) => (
+                                    <p key={key}>
+                                      <span className="font-mono text-primary">{key}</span> = {value}
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {(formula.whenToUse || formula.when_to_use) && (
+                              <div className="text-sm">
+                                <span className="font-semibold text-muted-foreground">When to use: </span>
+                                {formula.whenToUse || formula.when_to_use}
+                              </div>
+                            )}
+                            
+                            {formula.example && (
+                              <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
+                                <p className="text-sm">
+                                  <span className="font-semibold text-accent">Example: </span>
+                                  {formula.example}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {(formula.commonMistakes || formula.common_mistakes) && (
+                              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                                <p className="text-sm">
+                                  <span className="font-semibold text-destructive">⚠️ Common Mistakes: </span>
+                                  {formula.commonMistakes || formula.common_mistakes}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
           )}
         </div>
       </div>
