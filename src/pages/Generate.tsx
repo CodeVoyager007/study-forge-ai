@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { BookOpen, Brain, FileText, Layers, Target, FileCheck, Lightbulb, Map } from "lucide-react";
+import { useScrollAnimation, useParallax } from "@/hooks/use-scroll-animation";
+import toolsBg from "@/assets/tools-bg.jpg";
 
 const Generate = () => {
+  const scrollY = useParallax();
+  const gridAnim = useScrollAnimation();
+  
   const tools = [
     {
       icon: Target,
@@ -133,8 +138,18 @@ const Generate = () => {
   ];
 
   return (
-    <div className="min-h-screen pt-24 pb-12">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen pt-24 pb-12 relative overflow-hidden">
+      {/* Parallax Background */}
+      <div 
+        className="absolute inset-0 parallax-bg opacity-10"
+        style={{
+          transform: `translateY(${scrollY * 0.3}px)`,
+          backgroundImage: `url(${toolsBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+      <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <div className="text-center space-y-4 animate-fade-in">
@@ -147,10 +162,14 @@ const Generate = () => {
           </div>
 
           {/* Tools Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8">
+          <div ref={gridAnim.ref} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8">
             {tools.map((tool, index) => (
               <Link key={index} to={tool.path}>
-                <Card className="p-6 bg-card border-border hover:border-primary/50 card-hover group h-full">
+                <Card 
+                  className={`p-6 bg-card/80 backdrop-blur-sm border-border hover:border-primary/50 card-hover group h-full ${
+                    gridAnim.isVisible ? `scale-reveal stagger-${(index % 6) + 1}` : 'opacity-0'
+                  }`}
+                >
                   <div className={`rounded-lg bg-gradient-to-br ${tool.color} w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <tool.icon className="h-6 w-6 text-white" />
                   </div>

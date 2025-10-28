@@ -5,10 +5,20 @@ import { Sparkles, Brain, Zap, BookOpen, Target, Lightbulb, ArrowRight, CheckCir
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { useScrollAnimation, useParallax } from "@/hooks/use-scroll-animation";
+import heroBg from "@/assets/hero-bg.jpg";
+import featuresBg from "@/assets/features-bg.jpg";
+import toolsBg from "@/assets/tools-bg.jpg";
+import ctaBg from "@/assets/cta-bg.jpg";
 
 const Landing = () => {
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
+  const scrollY = useParallax();
+  const featuresAnim = useScrollAnimation();
+  const toolsAnim = useScrollAnimation();
+  const stepsAnim = useScrollAnimation();
+  const ctaAnim = useScrollAnimation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -55,8 +65,19 @@ const Landing = () => {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-32 pb-20">
-        {/* Gradient mesh background */}
-        <div className="absolute inset-0 mesh-bg opacity-30 blur-3xl" />
+        {/* Parallax Background Image */}
+        <div 
+          className="absolute inset-0 parallax-bg"
+          style={{
+            transform: `translateY(${scrollY * 0.5}px)`,
+            backgroundImage: `url(${heroBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.3,
+          }}
+        />
+        {/* Gradient mesh overlay */}
+        <div className="absolute inset-0 mesh-bg opacity-40 blur-3xl" />
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
@@ -113,8 +134,18 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 relative">
-        <div className="container mx-auto px-4">
+      <section id="features" className="py-20 relative overflow-hidden">
+        {/* Parallax Background */}
+        <div 
+          className="absolute inset-0 parallax-bg opacity-10"
+          style={{
+            transform: `translateY(${scrollY * 0.3}px)`,
+            backgroundImage: `url(${featuresBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl md:text-5xl font-bold">
               <span className="gradient-text">Why StudyForge AI?</span>
@@ -124,11 +155,13 @@ const Landing = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div ref={featuresAnim.ref} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
               <Card 
                 key={index}
-                className="p-6 bg-card border-border hover:border-primary/50 card-hover group"
+                className={`p-6 bg-card/80 backdrop-blur-sm border-border hover:border-primary/50 card-hover group ${
+                  featuresAnim.isVisible ? `scroll-reveal stagger-${index + 1}` : 'opacity-0'
+                }`}
               >
                 <div className="rounded-lg bg-primary/10 w-12 h-12 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                   <feature.icon className="h-6 w-6 text-primary" />
@@ -142,8 +175,18 @@ const Landing = () => {
       </section>
 
       {/* Tools Grid */}
-      <section className="py-20 relative">
-        <div className="container mx-auto px-4">
+      <section className="py-20 relative overflow-hidden">
+        {/* Parallax Background */}
+        <div 
+          className="absolute inset-0 parallax-bg opacity-15"
+          style={{
+            transform: `translateY(${scrollY * 0.25}px)`,
+            backgroundImage: `url(${toolsBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-16 space-y-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-sm text-accent">
               <Lightbulb className="h-4 w-4" />
@@ -152,11 +195,13 @@ const Landing = () => {
             <h2 className="text-3xl md:text-5xl font-bold">Everything You Need to Excel</h2>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div ref={toolsAnim.ref} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {tools.map((tool, index) => (
               <Card 
                 key={index}
-                className="p-6 bg-secondary/50 border-border hover:border-primary/50 card-hover cursor-pointer"
+                className={`p-6 bg-card/70 backdrop-blur-sm border-border hover:border-primary/50 card-hover cursor-pointer ${
+                  toolsAnim.isVisible ? `scale-reveal stagger-${(index % 6) + 1}` : 'opacity-0'
+                }`}
               >
                 <h3 className="text-lg font-semibold mb-2">{tool.name}</h3>
                 <p className="text-sm text-muted-foreground">{tool.desc}</p>
@@ -174,13 +219,18 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">Three simple steps to better studying</p>
           </div>
           
-          <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
+          <div ref={stepsAnim.ref} className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
             {[
               { step: "01", title: "Create Account", desc: "Sign up with email verification for secure access" },
               { step: "02", title: "Choose & Generate", desc: "Select format and enter your topic to generate materials" },
               { step: "03", title: "Study & Track", desc: "Learn with AI materials and monitor your progress" },
             ].map((item, index) => (
-              <div key={index} className="text-center space-y-4">
+              <div 
+                key={index} 
+                className={`text-center space-y-4 ${
+                  stepsAnim.isVisible ? `scroll-reveal stagger-${index + 1}` : 'opacity-0'
+                }`}
+              >
                 <div className="text-4xl font-bold text-primary-glow">{item.step}</div>
                 <h3 className="text-xl font-semibold">{item.title}</h3>
                 <p className="text-muted-foreground">{item.desc}</p>
@@ -191,9 +241,24 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 relative">
-        <div className="container mx-auto px-4">
-          <Card className="p-12 bg-gradient-to-br from-primary/10 to-primary-glow/10 border-primary/20 text-center space-y-6 relative overflow-hidden">
+      <section className="py-20 relative overflow-hidden">
+        {/* Parallax Background */}
+        <div 
+          className="absolute inset-0 parallax-bg opacity-20"
+          style={{
+            transform: `translateY(${scrollY * 0.2}px)`,
+            backgroundImage: `url(${ctaBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+        <div className="container mx-auto px-4 relative z-10">
+          <Card 
+            ref={ctaAnim.ref}
+            className={`p-12 bg-gradient-to-br from-primary/10 to-primary-glow/10 backdrop-blur-xl border-primary/20 text-center space-y-6 relative overflow-hidden ${
+              ctaAnim.isVisible ? 'scale-reveal' : 'opacity-0'
+            }`}
+          >
             <div className="absolute inset-0 mesh-bg opacity-20" />
             <div className="relative z-10 space-y-6">
               <h2 className="text-3xl md:text-5xl font-bold">Ready to Study Smarter?</h2>
