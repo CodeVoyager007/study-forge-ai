@@ -19,7 +19,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `You are an expert language teacher. Generate ${count} vocabulary words related to ${topic} at ${difficulty} difficulty level with definitions, example sentences, synonyms, and memory tips.`;
+    const systemPrompt = `You are an expert language teacher. Generate educational vocabulary only. Do not include offensive, harmful, or inappropriate words.`;
 
     const userPrompt = `Create a vocabulary list of ${count} words about ${topic}. For each word include:
 1. Word
@@ -27,9 +27,7 @@ serve(async (req) => {
 3. Definition
 4. Example sentence
 5. Synonyms
-6. Memory tip or mnemonic
-
-Format as a JSON array of vocabulary objects.`;
+6. Memory tip or mnemonic`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -43,6 +41,35 @@ Format as a JSON array of vocabulary objects.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_vocabulary",
+            description: "Generate vocabulary words with definitions",
+            parameters: {
+              type: "object",
+              properties: {
+                words: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      word: { type: "string" },
+                      partOfSpeech: { type: "string" },
+                      definition: { type: "string" },
+                      example: { type: "string" },
+                      synonyms: { type: "array", items: { type: "string" } },
+                      memoryTip: { type: "string" }
+                    },
+                    required: ["word", "definition", "example"]
+                  }
+                }
+              },
+              required: ["words"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "generate_vocabulary" } }
       }),
     });
 
@@ -53,9 +80,15 @@ Format as a JSON array of vocabulary objects.`;
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const toolCall = data.choices[0].message.tool_calls?.[0];
+    
+    if (!toolCall) {
+      throw new Error('No structured output received from AI');
+    }
 
-    return new Response(JSON.stringify({ content }), {
+    const vocabulary = JSON.parse(toolCall.function.arguments);
+
+    return new Response(JSON.stringify({ vocabulary }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

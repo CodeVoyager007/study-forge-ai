@@ -33,10 +33,17 @@ const GenerateDiagram = () => {
         body: { topic, type: diagramType, difficulty }
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+        }
+        if (error.message?.includes('402') || error.message?.includes('payment')) {
+          throw new Error('AI credits depleted. Please add credits to continue.');
+        }
+        throw error;
+      }
 
-      const parsedContent = JSON.parse(data.content);
-      setDiagram(parsedContent);
+      setDiagram(data.diagram);
 
       // Save to database
       const { data: { user } } = await supabase.auth.getUser();
@@ -45,7 +52,7 @@ const GenerateDiagram = () => {
           user_id: user.id,
           type: 'diagram',
           title: `${diagramType}: ${topic}`,
-          content: parsedContent,
+          content: data.diagram,
           difficulty,
           metadata: { topic, diagramType }
         });
@@ -59,7 +66,7 @@ const GenerateDiagram = () => {
       console.error('Error:', error);
       toast({
         title: "Error",
-        description: "Failed to generate diagram",
+        description: error instanceof Error ? error.message : "Failed to generate diagram",
         variant: "destructive",
       });
     } finally {

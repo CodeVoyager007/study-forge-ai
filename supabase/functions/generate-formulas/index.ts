@@ -19,7 +19,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `You are an expert mathematics and science educator. Generate a comprehensive formula sheet for ${topic} at ${difficulty} difficulty level.`;
+    const systemPrompt = `You are an expert mathematics and science educator. Generate educational formula sheets. Do not include any harmful, unethical, or inappropriate content.`;
 
     const userPrompt = `Create a detailed formula sheet for ${topic}. For each formula include:
 1. Formula name
@@ -29,7 +29,7 @@ serve(async (req) => {
 5. Example application
 6. Common mistakes to avoid
 
-Organize formulas by category. Format as JSON with categories and formulas array.`;
+Organize formulas by category.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -43,6 +43,46 @@ Organize formulas by category. Format as JSON with categories and formulas array
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_formulas",
+            description: "Generate a structured formula sheet",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                categories: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      name: { type: "string" },
+                      formulas: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            name: { type: "string" },
+                            formula: { type: "string" },
+                            variables: { type: "object" },
+                            whenToUse: { type: "string" },
+                            example: { type: "string" },
+                            commonMistakes: { type: "string" }
+                          },
+                          required: ["name", "formula"]
+                        }
+                      }
+                    },
+                    required: ["name", "formulas"]
+                  }
+                }
+              },
+              required: ["title", "categories"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "generate_formulas" } }
       }),
     });
 
@@ -53,9 +93,15 @@ Organize formulas by category. Format as JSON with categories and formulas array
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const toolCall = data.choices[0].message.tool_calls?.[0];
+    
+    if (!toolCall) {
+      throw new Error('No structured output received from AI');
+    }
 
-    return new Response(JSON.stringify({ content }), {
+    const formulas = JSON.parse(toolCall.function.arguments);
+
+    return new Response(JSON.stringify({ formulas }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

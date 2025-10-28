@@ -18,23 +18,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    const systemPrompt = `You are an expert at creating effective study flashcards. Create clear, concise flashcards that help students learn and retain information.`;
+    const systemPrompt = `You are an expert at creating effective study flashcards. Create educational content only. Do not include harmful or inappropriate material.`;
 
-    const userPrompt = `Create ${numCards} flashcards about "${topic}" at ${difficulty} difficulty level.
-
-Each flashcard should have:
-- A clear, specific question or term on the front
-- A comprehensive but concise answer on the back
-- Additional context or examples where helpful
-
-Return a JSON array with this structure:
-[
-  {
-    "front": "Question or term",
-    "back": "Answer with explanation",
-    "category": "subtopic or category"
-  }
-]`;
+    const userPrompt = `Create ${numCards} flashcards about "${topic}" at ${difficulty} difficulty level. Each should have clear question/term and comprehensive answer.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -48,7 +34,32 @@ Return a JSON array with this structure:
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        response_format: { type: "json_object" }
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_flashcards",
+            description: "Generate study flashcards",
+            parameters: {
+              type: "object",
+              properties: {
+                flashcards: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      front: { type: "string" },
+                      back: { type: "string" },
+                      category: { type: "string" }
+                    },
+                    required: ["front", "back"]
+                  }
+                }
+              },
+              required: ["flashcards"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "generate_flashcards" } }
       }),
     });
 
@@ -71,16 +82,14 @@ Return a JSON array with this structure:
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const toolCall = data.choices[0].message.tool_calls?.[0];
     
-    let flashcards;
-    try {
-      const parsed = JSON.parse(content);
-      flashcards = Array.isArray(parsed) ? parsed : parsed.flashcards || parsed.cards || [];
-    } catch (e) {
-      console.error("Failed to parse AI response:", content);
-      throw new Error("Invalid response format from AI");
+    if (!toolCall) {
+      throw new Error('No structured output received from AI');
     }
+
+    const parsed = JSON.parse(toolCall.function.arguments);
+    const flashcards = parsed.flashcards || [];
 
     return new Response(JSON.stringify({ flashcards }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

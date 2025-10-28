@@ -18,24 +18,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    const systemPrompt = `You are an expert at creating comprehensive yet concise summaries. Focus on key concepts, main ideas, and important details.`;
+    const systemPrompt = `You are an expert at creating comprehensive summaries. Create educational content only. Do not include harmful, biased, or inappropriate content.`;
 
-    const userPrompt = `Create a ${length} summary about "${topic}" in ${format} format.
-
-Requirements:
-- Cover all major concepts and key points
-- Use clear, accessible language
-- Organize information logically
-${format === 'bullet' ? '- Use bullet points for each main idea' : '- Use well-structured paragraphs'}
-- Include important examples or applications
-
-Return a JSON object with this structure:
-{
-  "title": "Topic name",
-  "content": "${format === 'bullet' ? 'Array of bullet point strings' : 'Summary text with paragraphs'}",
-  "keyPoints": ["Key point 1", "Key point 2", "Key point 3"],
-  "tags": ["tag1", "tag2", "tag3"]
-}`;
+    const userPrompt = `Create a ${length} summary about "${topic}" in ${format} format. Cover key concepts with clear language and examples.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -49,7 +34,26 @@ Return a JSON object with this structure:
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        response_format: { type: "json_object" }
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_summary",
+            description: "Generate a topic summary",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                content: format === 'bullet' 
+                  ? { type: "array", items: { type: "string" } }
+                  : { type: "string" },
+                keyPoints: { type: "array", items: { type: "string" } },
+                tags: { type: "array", items: { type: "string" } }
+              },
+              required: ["title", "content", "keyPoints"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "generate_summary" } }
       }),
     });
 
@@ -72,8 +76,13 @@ Return a JSON object with this structure:
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
-    const summary = JSON.parse(content);
+    const toolCall = data.choices[0].message.tool_calls?.[0];
+    
+    if (!toolCall) {
+      throw new Error('No structured output received from AI');
+    }
+
+    const summary = JSON.parse(toolCall.function.arguments);
 
     return new Response(JSON.stringify({ summary }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

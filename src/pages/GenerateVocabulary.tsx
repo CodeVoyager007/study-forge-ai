@@ -33,10 +33,18 @@ const GenerateVocabulary = () => {
         body: { topic, difficulty, count: parseInt(count) }
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+        }
+        if (error.message?.includes('402') || error.message?.includes('payment')) {
+          throw new Error('AI credits depleted. Please add credits to continue.');
+        }
+        throw error;
+      }
 
-      const parsedContent = JSON.parse(data.content);
-      setVocabulary(Array.isArray(parsedContent) ? parsedContent : parsedContent.words || []);
+      const words = data.vocabulary.words || [];
+      setVocabulary(words);
 
       // Save to database
       const { data: { user } } = await supabase.auth.getUser();
@@ -45,7 +53,7 @@ const GenerateVocabulary = () => {
           user_id: user.id,
           type: 'vocabulary',
           title: `Vocabulary: ${topic}`,
-          content: { words: parsedContent },
+          content: data.vocabulary,
           difficulty,
           metadata: { topic, count: parseInt(count) }
         });
@@ -59,7 +67,7 @@ const GenerateVocabulary = () => {
       console.error('Error:', error);
       toast({
         title: "Error",
-        description: "Failed to generate vocabulary",
+        description: error instanceof Error ? error.message : "Failed to generate vocabulary",
         variant: "destructive",
       });
     } finally {

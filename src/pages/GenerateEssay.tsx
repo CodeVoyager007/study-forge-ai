@@ -44,7 +44,15 @@ const GenerateEssay = () => {
         body: { topic: topic.trim(), essayType, wordCount: parseInt(wordCount) || 500 }
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+        }
+        if (error.message?.includes('402') || error.message?.includes('payment')) {
+          throw new Error('AI credits depleted. Please add credits to continue.');
+        }
+        throw error;
+      }
 
       if (!data?.essay) {
         throw new Error("No essay generated");

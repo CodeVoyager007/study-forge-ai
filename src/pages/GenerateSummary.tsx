@@ -44,7 +44,15 @@ const GenerateSummary = () => {
         body: { topic: topic.trim(), length, format: format === "bullet" ? "bullet" : "paragraph" }
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+        }
+        if (error.message?.includes('402') || error.message?.includes('payment')) {
+          throw new Error('AI credits depleted. Please add credits to continue.');
+        }
+        throw error;
+      }
 
       if (!data?.summary) {
         throw new Error("No summary generated");

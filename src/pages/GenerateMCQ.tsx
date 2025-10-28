@@ -46,7 +46,15 @@ const GenerateMCQ = () => {
         body: { topic: topic.trim(), difficulty, numQuestions: numQuestions[0] }
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+        }
+        if (error.message?.includes('402') || error.message?.includes('payment')) {
+          throw new Error('AI credits depleted. Please add credits to continue.');
+        }
+        throw error;
+      }
 
       if (!data?.mcqs || data.mcqs.length === 0) {
         throw new Error("No MCQs generated");

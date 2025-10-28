@@ -18,25 +18,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    const systemPrompt = `You are an expert educational content creator. Generate multiple choice questions that are clear, challenging, and educational.`;
+    const systemPrompt = `You are an expert educational content creator. Generate educational questions only. Do not include harmful, unethical, or inappropriate content.`;
 
-    const userPrompt = `Create ${numQuestions} multiple choice questions about "${topic}" at ${difficulty} difficulty level.
-
-For each question:
-- Write a clear, specific question
-- Provide exactly 4 answer options (A, B, C, D)
-- Mark the correct answer
-- Include a detailed explanation
-
-Return ONLY a JSON array with this exact structure:
-[
-  {
-    "question": "Question text here?",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correct": 0,
-    "explanation": "Detailed explanation of why this answer is correct..."
-  }
-]`;
+    const userPrompt = `Create ${numQuestions} multiple choice questions about "${topic}" at ${difficulty} difficulty level. Each question should have 4 options and a clear explanation.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -50,7 +34,33 @@ Return ONLY a JSON array with this exact structure:
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        response_format: { type: "json_object" }
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_mcqs",
+            description: "Generate multiple choice questions",
+            parameters: {
+              type: "object",
+              properties: {
+                questions: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      question: { type: "string" },
+                      options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
+                      correct: { type: "number", minimum: 0, maximum: 3 },
+                      explanation: { type: "string" }
+                    },
+                    required: ["question", "options", "correct", "explanation"]
+                  }
+                }
+              },
+              required: ["questions"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "generate_mcqs" } }
       }),
     });
 
@@ -73,16 +83,14 @@ Return ONLY a JSON array with this exact structure:
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const toolCall = data.choices[0].message.tool_calls?.[0];
     
-    let mcqs;
-    try {
-      const parsed = JSON.parse(content);
-      mcqs = Array.isArray(parsed) ? parsed : parsed.mcqs || parsed.questions || [];
-    } catch (e) {
-      console.error("Failed to parse AI response:", content);
-      throw new Error("Invalid response format from AI");
+    if (!toolCall) {
+      throw new Error('No structured output received from AI');
     }
+
+    const parsed = JSON.parse(toolCall.function.arguments);
+    const mcqs = parsed.questions || [];
 
     return new Response(JSON.stringify({ mcqs }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

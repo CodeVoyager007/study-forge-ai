@@ -18,24 +18,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    const systemPrompt = `You are an expert academic writer. Create well-structured, coherent essays with proper citations and formatting.`;
+    const systemPrompt = `You are an expert academic writer. Create educational essays only. Do not write content that is harmful, unethical, plagiarized, or inappropriate.`;
 
-    const userPrompt = `Write a ${essayType} essay about "${topic}" with approximately ${wordCount} words.
-
-Requirements:
-- Clear introduction with thesis statement
-- Well-developed body paragraphs with evidence
-- Strong conclusion
-- Include 3-5 relevant citations in APA format
-- Professional academic tone
-
-Return a JSON object with this structure:
-{
-  "title": "Essay title",
-  "content": "Full essay text with paragraphs separated by \\n\\n",
-  "citations": ["Citation 1", "Citation 2", "Citation 3"],
-  "outline": ["Introduction", "Main Point 1", "Main Point 2", "Conclusion"]
-}`;
+    const userPrompt = `Write a ${essayType} essay about "${topic}" with approximately ${wordCount} words. Include clear structure, evidence, and proper citations.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -49,7 +34,24 @@ Return a JSON object with this structure:
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        response_format: { type: "json_object" }
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_essay",
+            description: "Generate a structured academic essay",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                content: { type: "string" },
+                citations: { type: "array", items: { type: "string" } },
+                outline: { type: "array", items: { type: "string" } }
+              },
+              required: ["title", "content", "citations", "outline"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "generate_essay" } }
       }),
     });
 
@@ -72,8 +74,13 @@ Return a JSON object with this structure:
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
-    const essay = JSON.parse(content);
+    const toolCall = data.choices[0].message.tool_calls?.[0];
+    
+    if (!toolCall) {
+      throw new Error('No structured output received from AI');
+    }
+
+    const essay = JSON.parse(toolCall.function.arguments);
 
     return new Response(JSON.stringify({ essay }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
