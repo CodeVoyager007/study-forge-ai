@@ -52,6 +52,17 @@ const Navbar = () => {
           {user && (
             <div className="hidden md:flex items-center gap-6">
               <Link
+                to="/home"
+                className={`text-sm font-medium transition-all hover:text-primary relative group ${
+                  isActive("/home") ? "text-primary" : "text-foreground/80"
+                }`}
+              >
+                Home
+                {isActive("/home") && (
+                  <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-primary-glow rounded-full" />
+                )}
+              </Link>
+              <Link
                 to="/generate"
                 className={`text-sm font-medium transition-all hover:text-primary relative group ${
                   isActive("/generate") ? "text-primary" : "text-foreground/80"
@@ -130,6 +141,13 @@ const Navbar = () => {
           <div className="container mx-auto px-4 py-4 space-y-4">
             {user ? (
               <>
+                <Link
+                  to="/home"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors py-2"
+                >
+                  Home
+                </Link>
                 <Link
                   to="/generate"
                   onClick={() => setMobileMenuOpen(false)}

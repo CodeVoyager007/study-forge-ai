@@ -7,6 +7,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Landing from "./pages/Landing";
+import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Generate from "./pages/Generate";
 import GenerateMCQ from "./pages/GenerateMCQ";
@@ -32,6 +33,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/generate" element={<ProtectedRoute><Generate /></ProtectedRoute>} />
           <Route path="/generate/mcqs" element={<ProtectedRoute><GenerateMCQ /></ProtectedRoute>} />
           <Route path="/generate/flashcards" element={<ProtectedRoute><GenerateFlashcards /></ProtectedRoute>} />

@@ -24,7 +24,7 @@ const Landing = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session) {
-        navigate("/generate");
+        navigate("/home");
       }
     });
   }, [navigate]);
