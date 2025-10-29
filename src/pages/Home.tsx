@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Brain, Sparkles, Zap, BookOpen, TrendingUp, Target, Lightbulb, ArrowRight, Award, Clock, CheckCircle2 } from "lucide-react";
 import { useScrollAnimation, useParallax } from "@/hooks/use-scroll-animation";
-import heroBg from "@/assets/hero-bg.jpg";
-import featuresBg from "@/assets/features-bg.jpg";
-import toolsBg from "@/assets/tools-bg.jpg";
+import InteractiveRobot from "@/components/InteractiveRobot";
+import heroBg from "@/assets/home-hero-bg.jpg";
+import featuresBg from "@/assets/home-features-bg.jpg";
+import toolsBg from "@/assets/home-tools-bg.jpg";
 
 const Home = () => {
   const scrollY = useParallax();
@@ -48,6 +49,9 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Interactive Robot */}
+      <InteractiveRobot />
+
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-32 pb-24 perspective-container">
         {/* Parallax Background */}
@@ -58,34 +62,10 @@ const Home = () => {
             backgroundImage: `url(${heroBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            opacity: 0.25,
+            opacity: 0.3,
           }}
         />
         <div className="absolute inset-0 mesh-bg opacity-50 blur-3xl" />
-        
-        {/* 3D Animated Objects */}
-        <div 
-          className="floating-object top-20 left-[10%] w-40 h-40 bg-primary/20 rounded-full blur-3xl float-animation pulse-glow-animation"
-          style={{ transform: `translateZ(${scrollY * 0.1}px) translateY(${scrollY * -0.2}px)` }}
-        />
-        <div 
-          className="floating-object top-32 right-[15%] w-32 h-32 bg-primary-glow/25 rotate-3d-animation"
-          style={{ 
-            transform: `translateZ(${scrollY * 0.15}px) translateY(${scrollY * -0.3}px)`,
-            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
-          }}
-        />
-        <div 
-          className="floating-object bottom-20 left-[20%] w-48 h-48 bg-accent/15 rounded-2xl blur-2xl float-slow-animation"
-          style={{ transform: `translateZ(${scrollY * 0.2}px) translateY(${scrollY * -0.15}px)` }}
-        />
-        <div 
-          className="floating-object top-[40%] right-[25%] w-24 h-24 bg-primary/30 float-animation"
-          style={{ 
-            transform: `translateZ(${scrollY * 0.25}px) translateY(${scrollY * -0.25}px) rotate(${scrollY * 0.1}deg)`,
-            clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'
-          }}
-        />
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-5xl mx-auto text-center space-y-8 animate-fade-in">
@@ -146,25 +126,12 @@ const Home = () => {
       {/* Features Highlight */}
       <section className="py-24 relative overflow-hidden perspective-container">
         <div 
-          className="absolute inset-0 parallax-bg opacity-15"
+          className="absolute inset-0 parallax-bg opacity-20"
           style={{
             transform: `translateY(${scrollY * 0.3}px)`,
             backgroundImage: `url(${featuresBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-          }}
-        />
-        
-        {/* Floating Objects */}
-        <div 
-          className="floating-object top-16 right-[12%] w-36 h-36 bg-accent/20 rounded-full blur-2xl float-slow-animation"
-          style={{ transform: `translateY(${scrollY * -0.15}px)` }}
-        />
-        <div 
-          className="floating-object bottom-24 left-[18%] w-44 h-44 bg-primary-glow/20 rotate-3d-animation pulse-glow-animation"
-          style={{ 
-            transform: `translateY(${scrollY * -0.2}px)`,
-            clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)'
           }}
         />
 
@@ -200,25 +167,12 @@ const Home = () => {
       {/* Quick Access Tools */}
       <section className="py-24 relative overflow-hidden perspective-container">
         <div 
-          className="absolute inset-0 parallax-bg opacity-20"
+          className="absolute inset-0 parallax-bg opacity-25"
           style={{
             transform: `translateY(${scrollY * 0.25}px)`,
             backgroundImage: `url(${toolsBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-          }}
-        />
-        
-        {/* 3D Elements */}
-        <div 
-          className="floating-object top-[20%] left-[15%] w-40 h-40 bg-primary/20 blur-3xl float-animation pulse-glow-animation"
-          style={{ transform: `translateY(${scrollY * -0.18}px) rotateX(${scrollY * 0.05}deg)` }}
-        />
-        <div 
-          className="floating-object bottom-[25%] right-[20%] w-32 h-32 bg-accent/25 float-slow-animation"
-          style={{ 
-            transform: `translateY(${scrollY * -0.22}px)`,
-            clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
           }}
         />
 
