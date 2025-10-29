@@ -64,7 +64,7 @@ const Landing = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-32 pb-20">
+      <section className="relative overflow-hidden pt-32 pb-20 perspective-container">
         {/* Parallax Background Image */}
         <div 
           className="absolute inset-0 parallax-bg"
@@ -78,6 +78,30 @@ const Landing = () => {
         />
         {/* Gradient mesh overlay */}
         <div className="absolute inset-0 mesh-bg opacity-40 blur-3xl" />
+        
+        {/* Animated 3D Floating Objects */}
+        <div 
+          className="floating-object top-20 left-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl float-animation"
+          style={{ transform: `translateZ(${scrollY * 0.1}px) translateY(${scrollY * -0.2}px)` }}
+        />
+        <div 
+          className="floating-object top-40 right-20 w-24 h-24 bg-primary-glow/30 rotate-3d-animation"
+          style={{ 
+            transform: `translateZ(${scrollY * 0.15}px) translateY(${scrollY * -0.3}px)`,
+            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
+          }}
+        />
+        <div 
+          className="floating-object bottom-32 left-1/4 w-40 h-40 bg-accent/20 rounded-lg blur-xl float-slow-animation pulse-glow-animation"
+          style={{ transform: `translateZ(${scrollY * 0.2}px) translateY(${scrollY * -0.15}px)` }}
+        />
+        <div 
+          className="floating-object top-1/3 right-1/4 w-20 h-20 bg-primary/30 float-animation"
+          style={{ 
+            transform: `translateZ(${scrollY * 0.25}px) translateY(${scrollY * -0.25}px)`,
+            clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'
+          }}
+        />
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
@@ -134,7 +158,7 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 relative overflow-hidden">
+      <section id="features" className="py-20 relative overflow-hidden perspective-container">
         {/* Parallax Background */}
         <div 
           className="absolute inset-0 parallax-bg opacity-10"
@@ -143,6 +167,19 @@ const Landing = () => {
             backgroundImage: `url(${featuresBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+          }}
+        />
+        
+        {/* Floating Animated Objects */}
+        <div 
+          className="floating-object top-10 right-10 w-28 h-28 bg-accent/20 rounded-full blur-xl float-slow-animation"
+          style={{ transform: `translateY(${scrollY * -0.15}px)` }}
+        />
+        <div 
+          className="floating-object bottom-20 left-16 w-36 h-36 bg-primary-glow/25 rotate-3d-animation"
+          style={{ 
+            transform: `translateY(${scrollY * -0.2}px)`,
+            clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)'
           }}
         />
         <div className="container mx-auto px-4 relative z-10">
@@ -175,7 +212,7 @@ const Landing = () => {
       </section>
 
       {/* Tools Grid */}
-      <section className="py-20 relative overflow-hidden">
+      <section className="py-20 relative overflow-hidden perspective-container">
         {/* Parallax Background */}
         <div 
           className="absolute inset-0 parallax-bg opacity-15"
@@ -184,6 +221,19 @@ const Landing = () => {
             backgroundImage: `url(${toolsBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+          }}
+        />
+        
+        {/* 3D Floating Elements */}
+        <div 
+          className="floating-object top-1/4 left-20 w-32 h-32 bg-primary/25 blur-2xl float-animation pulse-glow-animation"
+          style={{ transform: `translateY(${scrollY * -0.18}px) rotateX(${scrollY * 0.05}deg)` }}
+        />
+        <div 
+          className="floating-object bottom-1/4 right-16 w-24 h-24 bg-accent/30 float-slow-animation"
+          style={{ 
+            transform: `translateY(${scrollY * -0.22}px)`,
+            clipPath: 'circle(50% at 50% 50%)'
           }}
         />
         <div className="container mx-auto px-4 relative z-10">
@@ -241,7 +291,7 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 relative overflow-hidden">
+      <section className="py-20 relative overflow-hidden perspective-container">
         {/* Parallax Background */}
         <div 
           className="absolute inset-0 parallax-bg opacity-20"
@@ -250,6 +300,19 @@ const Landing = () => {
             backgroundImage: `url(${ctaBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+          }}
+        />
+        
+        {/* Final Animated Objects */}
+        <div 
+          className="floating-object top-10 left-1/4 w-40 h-40 bg-primary-glow/20 rounded-full blur-3xl float-animation"
+          style={{ transform: `translateY(${scrollY * -0.12}px) scale(${1 + scrollY * 0.0001})` }}
+        />
+        <div 
+          className="floating-object bottom-10 right-1/4 w-28 h-28 bg-accent/25 rotate-3d-animation pulse-glow-animation"
+          style={{ 
+            transform: `translateY(${scrollY * -0.16}px)`,
+            clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
           }}
         />
         <div className="container mx-auto px-4 relative z-10">
