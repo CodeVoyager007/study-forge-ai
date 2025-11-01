@@ -18,7 +18,6 @@ import GenerateDiagram from "./pages/GenerateDiagram";
 import GenerateVocabulary from "./pages/GenerateVocabulary";
 import GenerateFormulas from "./pages/GenerateFormulas";
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,7 +42,6 @@ const App = () => (
           <Route path="/generate/vocabulary" element={<ProtectedRoute><GenerateVocabulary /></ProtectedRoute>} />
           <Route path="/generate/formulas" element={<ProtectedRoute><GenerateFormulas /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />

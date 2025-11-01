@@ -84,17 +84,6 @@ const Navbar = () => {
                   <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-primary-glow rounded-full" />
                 )}
               </Link>
-              <Link
-                to="/profile"
-                className={`text-sm font-medium transition-all hover:text-primary relative ${
-                  isActive("/profile") ? "text-primary" : "text-foreground/80"
-                }`}
-              >
-                Profile
-                {isActive("/profile") && (
-                  <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-primary-glow rounded-full" />
-                )}
-              </Link>
             </div>
           )}
 
@@ -162,14 +151,7 @@ const Navbar = () => {
                 >
                   Dashboard
                 </Link>
-                <Link
-                  to="/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors py-2"
-                >
-                  Profile
-                </Link>
-                <Button 
+                <Button
                   onClick={() => { handleLogout(); setMobileMenuOpen(false); }} 
                   variant="outline" 
                   className="w-full justify-start border-border/50 hover:border-primary/50"
