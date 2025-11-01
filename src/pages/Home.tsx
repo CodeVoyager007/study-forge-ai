@@ -49,11 +49,12 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Interactive Robot */}
-      <InteractiveRobot />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-32 pb-24 perspective-container">
+        {/* Interactive Robot - Only in Hero */}
+        <InteractiveRobot />
+        
         {/* Parallax Background */}
         <div 
           className="absolute inset-0 parallax-bg"
@@ -62,10 +63,11 @@ const Home = () => {
             backgroundImage: `url(${heroBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            opacity: 0.3,
+            opacity: 0.4,
           }}
         />
-        <div className="absolute inset-0 mesh-bg opacity-50 blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-transparent to-background" />
+        <div className="absolute inset-0 mesh-bg opacity-30 blur-3xl" />
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-5xl mx-auto text-center space-y-8 animate-fade-in">
