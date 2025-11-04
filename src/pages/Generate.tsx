@@ -139,21 +139,19 @@ const Generate = () => {
 
   return (
     <div className="min-h-screen pt-24 pb-12 relative overflow-hidden">
-      {/* Parallax Background */}
-      <div 
-        className="absolute inset-0 parallax-bg opacity-10"
-        style={{
-          transform: `translateY(${scrollY * 0.3}px)`,
-          backgroundImage: `url(${toolsBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
+      {/* Animated Mesh Background */}
+      <div className="fixed inset-0 mesh-bg opacity-20" />
+      <div className="fixed inset-0 bg-gradient-to-b from-background via-transparent to-background" />
+      
+      {/* Floating Orbs */}
+      <div className="fixed top-20 left-10 w-80 h-80 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+      <div className="fixed bottom-20 right-10 w-80 h-80 bg-secondary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <div className="text-center space-y-4 animate-fade-in">
-            <h1 className="text-4xl md:text-6xl font-bold">
+            <h1 className="text-5xl md:text-6xl font-bold">
               Choose Your <span className="gradient-text">Study Tool</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -166,12 +164,12 @@ const Generate = () => {
             {tools.map((tool, index) => (
               <Link key={index} to={tool.path}>
                 <Card 
-                  className={`p-6 bg-card/80 backdrop-blur-sm border-border hover:border-primary/50 card-hover group h-full ${
+                  className={`p-6 bg-card/60 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 card-hover group h-full ${
                     gridAnim.isVisible ? `scale-reveal stagger-${(index % 6) + 1}` : 'opacity-0'
                   }`}
                 >
-                  <div className={`rounded-lg bg-gradient-to-br ${tool.color} w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <tool.icon className="h-6 w-6 text-white" />
+                  <div className={`rounded-xl bg-gradient-to-br ${tool.color} w-14 h-14 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-glow transition-all`}>
+                    <tool.icon className="h-7 w-7 text-white" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
                     {tool.title}

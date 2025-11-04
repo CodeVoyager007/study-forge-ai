@@ -1,127 +1,147 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Brain, Sparkles, Zap, BookOpen, TrendingUp, Target, Lightbulb, ArrowRight, Award, Clock, CheckCircle2 } from "lucide-react";
-import { useScrollAnimation, useParallax } from "@/hooks/use-scroll-animation";
-import heroBg from "@/assets/home-hero-bg.jpg";
-import featuresBg from "@/assets/home-features-bg.jpg";
-import toolsBg from "@/assets/home-tools-bg.jpg";
+import { Sparkles, TrendingUp, Target, Zap, Brain, BookOpen, Lightbulb, FileText } from "lucide-react";
+import { useParallax, useScrollAnimation } from "@/hooks/use-scroll-animation";
+import homeHeroBg from "@/assets/home-hero-bg.jpg";
+import homeFeaturesBg from "@/assets/home-features-bg.jpg";
+import homeToolsBg from "@/assets/home-tools-bg.jpg";
 
 const Home = () => {
   const scrollY = useParallax();
-  const statsAnim = useScrollAnimation();
+  const heroAnim = useScrollAnimation();
   const featuresAnim = useScrollAnimation();
   const toolsAnim = useScrollAnimation();
 
-  const stats = [
-    { icon: BookOpen, value: "18+", label: "AI Tools" },
-    { icon: Clock, value: "24/7", label: "Available" },
-    { icon: Award, value: "100%", label: "Free Access" },
+  const features = [
+    { icon: Brain, title: "Smart Learning", description: "AI adapts to your learning style and pace", gradient: "from-primary via-primary-glow to-secondary" },
+    { icon: Zap, title: "Instant Generation", description: "Create study materials in seconds", gradient: "from-secondary via-accent to-primary" },
+    { icon: TrendingUp, title: "Track Progress", description: "Monitor your improvement over time", gradient: "from-accent via-primary to-primary-glow" },
+    { icon: Target, title: "Goal Focused", description: "Stay on track with personalized goals", gradient: "from-primary-glow via-secondary to-accent" },
   ];
 
-  const highlights = [
-    {
-      icon: Brain,
-      title: "Smart Learning",
-      description: "AI adapts to your learning pace and style for maximum retention",
-      color: "primary",
-    },
-    {
-      icon: Zap,
-      title: "Instant Generation",
-      description: "Create study materials in seconds with advanced AI models",
-      color: "accent",
-    },
-    {
-      icon: TrendingUp,
-      title: "Track Progress",
-      description: "Monitor your study history and improvement over time",
-      color: "primary-glow",
-    },
-    {
-      icon: Target,
-      title: "Goal Focused",
-      description: "Set targets and achieve them with personalized study plans",
-      color: "accent",
-    },
+  const tools = [
+    { icon: Target, title: "MCQs", gradient: "from-primary to-primary-glow" },
+    { icon: BookOpen, title: "Flashcards", gradient: "from-secondary to-accent" },
+    { icon: FileText, title: "Essays", gradient: "from-accent to-primary" },
+    { icon: Lightbulb, title: "Summaries", gradient: "from-primary-glow to-secondary" },
   ];
 
   return (
     <div className="min-h-screen">
-
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-32 pb-24 perspective-container">
-        {/* Floating Animated Orbs */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/30 rounded-full blur-3xl animate-float" />
-          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-float-slow" style={{ animationDelay: '1s' }} />
-          <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-primary-glow/25 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-          <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-accent/15 rounded-full blur-3xl animate-pulse" />
-        </div>
-        
-        {/* Parallax Background */}
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 mesh-bg opacity-30" />
         <div 
-          className="absolute inset-0 parallax-bg"
+          className="absolute inset-0 opacity-20 parallax-bg"
           style={{
-            transform: `translateY(${scrollY * 0.5}px)`,
-            backgroundImage: `url(${heroBg})`,
+            transform: `translateY(${scrollY * 0.3}px)`,
+            backgroundImage: `url(${homeHeroBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            opacity: 0.4,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-transparent to-background" />
-        <div className="absolute inset-0 mesh-bg opacity-30 blur-3xl" />
+        
+        {/* Floating Gradient Orbs */}
+        <div className="absolute top-20 left-10 w-96 h-96 bg-primary/30 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "2s" }} />
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-5xl mx-auto text-center space-y-8 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm">
-              <Sparkles className="h-5 w-5 text-primary-glow" />
-              <span className="text-lg font-medium gradient-text">Welcome to StudyForge AI</span>
+          <div ref={heroAnim.ref} className={`max-w-4xl mx-auto text-center space-y-8 ${heroAnim.isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/10 border-2 border-primary/30 backdrop-blur-md shadow-glow">
+              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+              <span className="text-sm font-semibold text-primary">Welcome Back</span>
             </div>
-            
-            <h1 className="text-6xl md:text-8xl font-bold leading-tight">
-              Your Personal
-              <span className="gradient-text block mt-4">AI Learning Hub</span>
+
+            {/* Main Headline */}
+            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
+              Your AI-Powered
+              <br />
+              <span className="gradient-text text-6xl md:text-8xl">Study Companion</span>
             </h1>
-            
-            <p className="text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Transform the way you study with AI-powered tools that adapt to your needs. 
-              Generate, practice, and master any subject effortlessly.
+
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Generate personalized study materials with advanced AI. 
+              <span className="text-primary font-semibold"> Transform any topic</span> into comprehensive learning resources instantly.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8">
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/generate">
-                <Button size="lg" className="bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all text-xl px-10 h-16 group">
-                  <Sparkles className="mr-3 h-6 w-6" />
+                <Button size="lg" className="text-lg h-14 px-8 shadow-neon">
+                  <Sparkles className="mr-2 h-5 w-5" />
                   Start Generating
-                  <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               <Link to="/dashboard">
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="text-xl px-10 h-16 border-border hover:border-primary/50 hover:bg-secondary backdrop-blur-sm"
-                >
-                  <TrendingUp className="mr-3 h-6 w-6" />
+                <Button size="lg" variant="outline" className="text-lg h-14 px-8">
                   View Dashboard
                 </Button>
               </Link>
             </div>
 
             {/* Stats */}
-            <div ref={statsAnim.ref} className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16 max-w-3xl mx-auto">
-              {stats.map((stat, index) => (
+            <div className="grid grid-cols-3 gap-6 pt-12 max-w-2xl mx-auto">
+              <div className="space-y-2 p-4 rounded-xl bg-card/40 backdrop-blur-md border border-primary/20">
+                <div className="text-4xl font-bold gradient-text">18+</div>
+                <div className="text-sm text-muted-foreground">AI Tools</div>
+              </div>
+              <div className="space-y-2 p-4 rounded-xl bg-card/40 backdrop-blur-md border border-secondary/20">
+                <div className="text-4xl font-bold gradient-text">24/7</div>
+                <div className="text-sm text-muted-foreground">Availability</div>
+              </div>
+              <div className="space-y-2 p-4 rounded-xl bg-card/40 backdrop-blur-md border border-accent/20">
+                <div className="text-4xl font-bold gradient-text">100%</div>
+                <div className="text-sm text-muted-foreground">Free Access</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="relative py-24 overflow-hidden">
+        <div 
+          className="absolute inset-0 opacity-10 parallax-bg"
+          style={{
+            transform: `translateY(${scrollY * 0.15}px)`,
+            backgroundImage: `url(${homeFeaturesBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div ref={featuresAnim.ref} className={`max-w-6xl mx-auto space-y-16 ${featuresAnim.isVisible ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="text-center space-y-4">
+              <h2 className="text-4xl md:text-6xl font-bold">
+                Powerful <span className="gradient-text">Features</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Everything you need to accelerate your learning journey
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {features.map((feature, index) => (
                 <Card 
                   key={index}
-                  className={`p-6 bg-card/60 backdrop-blur-sm border-border hover:border-primary/50 card-hover ${
-                    statsAnim.isVisible ? `scale-reveal stagger-${index + 1}` : 'opacity-0'
+                  className={`p-6 group hover:scale-105 transition-all duration-300 bg-card/60 hover:bg-card/80 ${
+                    featuresAnim.isVisible ? `scale-reveal stagger-${index + 1}` : 'opacity-0'
                   }`}
                 >
-                  <stat.icon className="h-10 w-10 text-primary mx-auto mb-3" />
-                  <div className="text-4xl font-bold gradient-text mb-1">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  <div className={`rounded-2xl bg-gradient-to-br ${feature.gradient} w-14 h-14 flex items-center justify-center mb-4 group-hover:shadow-glow transition-all`}>
+                    <feature.icon className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {feature.description}
+                  </p>
                 </Card>
               ))}
             </div>
@@ -129,110 +149,49 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features Highlight */}
-      <section className="py-24 relative overflow-hidden perspective-container">
+      {/* Quick Tools Section */}
+      <section className="relative py-24 overflow-hidden">
         <div 
-          className="absolute inset-0 parallax-bg opacity-20"
+          className="absolute inset-0 opacity-10 parallax-bg"
           style={{
-            transform: `translateY(${scrollY * 0.3}px)`,
-            backgroundImage: `url(${featuresBg})`,
+            transform: `translateY(${scrollY * 0.2}px)`,
+            backgroundImage: `url(${homeToolsBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
         />
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-4xl md:text-6xl font-bold">
-              <span className="gradient-text">Powerful Features</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to succeed in your studies, all in one place
-            </p>
-          </div>
-          
-          <div ref={featuresAnim.ref} className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {highlights.map((feature, index) => (
-              <Card 
-                key={index}
-                className={`p-8 bg-card/70 backdrop-blur-sm border-border hover:border-primary/50 card-hover group ${
-                  featuresAnim.isVisible ? `scroll-reveal stagger-${index + 1}` : 'opacity-0'
-                }`}
-              >
-                <div className="rounded-xl bg-primary/10 w-16 h-16 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors group-hover:scale-110 transition-transform">
-                  <feature.icon className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-2xl font-semibold mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground text-lg leading-relaxed">{feature.description}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Access Tools */}
-      <section className="py-24 relative overflow-hidden perspective-container">
-        <div 
-          className="absolute inset-0 parallax-bg opacity-25"
-          style={{
-            transform: `translateY(${scrollY * 0.25}px)`,
-            backgroundImage: `url(${toolsBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16 space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 backdrop-blur-sm">
-              <Lightbulb className="h-5 w-5 text-accent" />
-              <span className="font-medium">Quick Access</span>
-            </div>
-            <h2 className="text-4xl md:text-6xl font-bold">Ready to Start?</h2>
-            <p className="text-xl text-muted-foreground">Choose your learning tool and begin your journey</p>
-          </div>
-          
-          <div ref={toolsAnim.ref} className="max-w-4xl mx-auto">
-            <Card 
-              className={`p-12 bg-gradient-to-br from-primary/10 via-primary-glow/10 to-accent/10 backdrop-blur-xl border-primary/20 text-center space-y-8 relative overflow-hidden ${
-                toolsAnim.isVisible ? 'scale-reveal' : 'opacity-0'
-              }`}
-            >
-              <div className="absolute inset-0 mesh-bg opacity-20" />
-              <div className="relative z-10 space-y-8">
-                <div className="flex flex-wrap justify-center gap-4">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-background/50 rounded-full backdrop-blur-sm border border-border">
-                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                    <span>MCQs</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-background/50 rounded-full backdrop-blur-sm border border-border">
-                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                    <span>Flashcards</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-background/50 rounded-full backdrop-blur-sm border border-border">
-                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                    <span>Essays</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-background/50 rounded-full backdrop-blur-sm border border-border">
-                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                    <span>Summaries</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-background/50 rounded-full backdrop-blur-sm border border-border">
-                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                    <span>And 14+ More</span>
-                  </div>
-                </div>
-                
-                <h3 className="text-3xl md:text-4xl font-bold">Access All Tools Now</h3>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                  Start generating personalized study materials instantly with our AI-powered platform
+          <div ref={toolsAnim.ref} className={`max-w-4xl mx-auto ${toolsAnim.isVisible ? 'scale-reveal' : 'opacity-0'}`}>
+            <Card className="p-12 bg-gradient-to-br from-card/80 via-primary/5 to-card/80 border-2 border-primary/30 hover:border-primary/50 transition-all">
+              <div className="text-center space-y-8">
+                <h2 className="text-4xl md:text-5xl font-bold">
+                  Start Creating <span className="gradient-text">Right Now</span>
+                </h2>
+                <p className="text-xl text-muted-foreground">
+                  Choose from our most popular AI study tools
                 </p>
-                
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                  {tools.map((tool, index) => (
+                    <div 
+                      key={index}
+                      className="p-4 rounded-xl bg-card/60 border border-border/50 hover:border-primary/50 hover:scale-105 transition-all group cursor-pointer"
+                    >
+                      <div className={`rounded-xl bg-gradient-to-br ${tool.gradient} w-12 h-12 flex items-center justify-center mx-auto mb-3 group-hover:shadow-glow transition-all`}>
+                        <tool.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="text-sm font-semibold group-hover:text-primary transition-colors">
+                        {tool.title}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 <Link to="/generate">
-                  <Button size="lg" className="bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all text-xl px-10 h-16 group">
-                    <Brain className="mr-3 h-6 w-6" />
+                  <Button size="lg" variant="secondary" className="text-lg h-14 px-8 mt-4">
+                    <Sparkles className="mr-2 h-5 w-5" />
                     Explore All Tools
-                    <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
               </div>

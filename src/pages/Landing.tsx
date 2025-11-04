@@ -1,156 +1,99 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Brain, Zap, BookOpen, Target, Lightbulb, ArrowRight, CheckCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Sparkles, Zap, TrendingUp, Shield, Brain, Target, BookOpen, Lightbulb } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
-import { useScrollAnimation, useParallax } from "@/hooks/use-scroll-animation";
-import heroBg from "@/assets/hero-bg.jpg";
-import featuresBg from "@/assets/features-bg.jpg";
-import toolsBg from "@/assets/tools-bg.jpg";
-import ctaBg from "@/assets/cta-bg.jpg";
+import { useParallax, useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 const Landing = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const scrollY = useParallax();
+  const heroAnim = useScrollAnimation();
   const featuresAnim = useScrollAnimation();
   const toolsAnim = useScrollAnimation();
-  const stepsAnim = useScrollAnimation();
-  const ctaAnim = useScrollAnimation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session) {
-        navigate("/home");
-      }
+      if (session) navigate("/home");
     });
   }, [navigate]);
 
   const features = [
-    {
-      icon: Brain,
-      title: "AI-Powered Generation",
-      description: "Advanced AI creates personalized study materials tailored to your learning style",
-    },
-    {
-      icon: Zap,
-      title: "Instant Results",
-      description: "Generate comprehensive study materials in seconds, not hours",
-    },
-    {
-      icon: BookOpen,
-      title: "18+ Formats",
-      description: "MCQs, flashcards, summaries, essays, diagrams, and more - all in one place",
-    },
-    {
-      icon: Target,
-      title: "Real-Time Tracking",
-      description: "Monitor your progress with detailed analytics and study history",
-    },
+    { icon: Brain, title: "AI-Powered", description: "Advanced AI generates personalized study materials", gradient: "from-primary to-primary-glow" },
+    { icon: Zap, title: "Instant Results", description: "Get comprehensive materials in seconds", gradient: "from-secondary to-accent" },
+    { icon: TrendingUp, title: "Track Progress", description: "Monitor your learning journey with analytics", gradient: "from-accent to-primary" },
+    { icon: Shield, title: "Reliable Quality", description: "High-quality, accurate educational content", gradient: "from-primary-glow to-secondary" },
   ];
 
   const tools = [
-    { name: "MCQ Generator", desc: "Practice with auto-generated questions" },
-    { name: "Flashcards", desc: "Memorable cards with flip animations" },
-    { name: "Essay Writer", desc: "AI-powered essay generation with citations" },
-    { name: "Diagram Creator", desc: "Visual flowcharts and timelines" },
-    { name: "Vocabulary Builder", desc: "Spaced repetition learning" },
-    { name: "Formula Sheets", desc: "Subject-specific equations" },
+    { icon: Target, title: "MCQ Generator", description: "Multiple choice questions with auto-grading", color: "primary" },
+    { icon: BookOpen, title: "Flashcards", description: "Interactive flip cards for memorization", color: "secondary" },
+    { icon: Lightbulb, title: "Summaries", description: "AI-powered topic overviews", color: "accent" },
+    { icon: Brain, title: "Essay Writer", description: "Full essay generation with citations", color: "primary" },
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated Mesh Background */}
+      <div className="fixed inset-0 mesh-bg opacity-30" />
+      <div className="fixed inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
+
+      {/* Floating Orbs */}
+      <div className="fixed top-20 left-10 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+      <div className="fixed bottom-20 right-10 w-96 h-96 bg-secondary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "2s" }} />
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-32 pb-20 perspective-container">
-        {/* Parallax Background Image */}
-        <div 
-          className="absolute inset-0 parallax-bg"
-          style={{
-            transform: `translateY(${scrollY * 0.5}px)`,
-            backgroundImage: `url(${heroBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.3,
-          }}
-        />
-        {/* Gradient mesh overlay */}
-        <div className="absolute inset-0 mesh-bg opacity-40 blur-3xl" />
-        
-        {/* Animated 3D Floating Objects */}
-        <div 
-          className="floating-object top-20 left-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl float-animation"
-          style={{ transform: `translateZ(${scrollY * 0.1}px) translateY(${scrollY * -0.2}px)` }}
-        />
-        <div 
-          className="floating-object top-40 right-20 w-24 h-24 bg-primary-glow/30 rotate-3d-animation"
-          style={{ 
-            transform: `translateZ(${scrollY * 0.15}px) translateY(${scrollY * -0.3}px)`,
-            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
-          }}
-        />
-        <div 
-          className="floating-object bottom-32 left-1/4 w-40 h-40 bg-accent/20 rounded-lg blur-xl float-slow-animation pulse-glow-animation"
-          style={{ transform: `translateZ(${scrollY * 0.2}px) translateY(${scrollY * -0.15}px)` }}
-        />
-        <div 
-          className="floating-object top-1/3 right-1/4 w-20 h-20 bg-primary/30 float-animation"
-          style={{ 
-            transform: `translateZ(${scrollY * 0.25}px) translateY(${scrollY * -0.25}px)`,
-            clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'
-          }}
-        />
-        
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm text-primary-glow">
-              <Sparkles className="h-4 w-4" />
-              <span>AI-Powered Learning Platform</span>
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              Master Any Subject with
-              <span className="gradient-text block mt-2">Smart Study Materials</span>
-            </h1>
-            
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Generate personalized MCQs, flashcards, summaries, essays, and 14+ more study formats. 
-              Transform any topic into comprehensive learning materials in seconds.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-              <Link to="/auth">
-                <Button size="lg" className="bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all text-lg px-8 h-14 group">
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Start Learning Free
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="text-lg px-8 h-14 border-border hover:border-primary/50 hover:bg-secondary"
-                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                <BookOpen className="mr-2 h-5 w-5" />
-                Explore Tools
-              </Button>
+      <section className="relative pt-32 pb-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div ref={heroAnim.ref} className={`text-center space-y-8 ${heroAnim.isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border-2 border-primary/30 backdrop-blur-sm">
+              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+              <span className="text-sm font-medium text-primary">AI-Powered Learning Platform</span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-8 pt-8 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                <span>No credit card required</span>
+            {/* Headline */}
+            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
+              Transform Your Learning <br />
+              <span className="gradient-text text-6xl md:text-8xl">With AI Power</span>
+            </h1>
+
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Generate study materials, flashcards, quizzes, and essays in seconds. 
+              <span className="text-primary font-semibold"> Powered by advanced AI</span> to accelerate your learning journey.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              <Link to="/auth">
+                <Button size="lg" className="text-lg h-14 px-8 shadow-neon">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Start Creating Free
+                </Button>
+              </Link>
+              <Link to="/auth">
+                <Button size="lg" variant="outline" className="text-lg h-14 px-8">
+                  View Demo
+                </Button>
+              </Link>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-8 pt-12 max-w-3xl mx-auto">
+              <div className="space-y-2">
+                <div className="text-4xl font-bold gradient-text">18+</div>
+                <div className="text-sm text-muted-foreground">AI Tools</div>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                <span>18+ AI Tools</span>
+              <div className="space-y-2">
+                <div className="text-4xl font-bold gradient-text">24/7</div>
+                <div className="text-sm text-muted-foreground">Available</div>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                <span>Unlimited generations</span>
+              <div className="space-y-2">
+                <div className="text-4xl font-bold gradient-text">100%</div>
+                <div className="text-sm text-muted-foreground">Free Access</div>
               </div>
             </div>
           </div>
@@ -158,180 +101,138 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 relative overflow-hidden perspective-container">
-        {/* Parallax Background */}
-        <div 
-          className="absolute inset-0 parallax-bg opacity-10"
-          style={{
-            transform: `translateY(${scrollY * 0.3}px)`,
-            backgroundImage: `url(${featuresBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-        
-        {/* Floating Animated Objects */}
-        <div 
-          className="floating-object top-10 right-10 w-28 h-28 bg-accent/20 rounded-full blur-xl float-slow-animation"
-          style={{ transform: `translateY(${scrollY * -0.15}px)` }}
-        />
-        <div 
-          className="floating-object bottom-20 left-16 w-36 h-36 bg-primary-glow/25 rotate-3d-animation"
-          style={{ 
-            transform: `translateY(${scrollY * -0.2}px)`,
-            clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)'
-          }}
-        />
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl md:text-5xl font-bold">
-              <span className="gradient-text">Why StudyForge AI?</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Experience the future of studying with AI-powered tools designed for success
-            </p>
-          </div>
-          
-          <div ref={featuresAnim.ref} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <Card 
-                key={index}
-                className={`p-6 bg-card/80 backdrop-blur-sm border-border hover:border-primary/50 card-hover group ${
-                  featuresAnim.isVisible ? `scroll-reveal stagger-${index + 1}` : 'opacity-0'
-                }`}
-              >
-                <div className="rounded-lg bg-primary/10 w-12 h-12 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <feature.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
-              </Card>
-            ))}
+      <section className="relative py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div ref={featuresAnim.ref} className={`space-y-12 ${featuresAnim.isVisible ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="text-center space-y-4">
+              <h2 className="text-4xl md:text-5xl font-bold">
+                Why Choose <span className="gradient-text">StudyForge AI</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Everything you need to excel in your studies, powered by cutting-edge AI
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {features.map((feature, index) => (
+                <Card 
+                  key={index}
+                  className={`p-6 bg-card/60 group hover:bg-card/80 hover:scale-105 transition-all duration-300 ${
+                    featuresAnim.isVisible ? `scale-reveal stagger-${index + 1}` : 'opacity-0'
+                  }`}
+                >
+                  <div className={`rounded-2xl bg-gradient-to-br ${feature.gradient} w-14 h-14 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-glow transition-all`}>
+                    <feature.icon className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Tools Grid */}
-      <section className="py-20 relative overflow-hidden perspective-container">
-        {/* Parallax Background */}
-        <div 
-          className="absolute inset-0 parallax-bg opacity-15"
-          style={{
-            transform: `translateY(${scrollY * 0.25}px)`,
-            backgroundImage: `url(${toolsBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-        
-        {/* 3D Floating Elements */}
-        <div 
-          className="floating-object top-1/4 left-20 w-32 h-32 bg-primary/25 blur-2xl float-animation pulse-glow-animation"
-          style={{ transform: `translateY(${scrollY * -0.18}px) rotateX(${scrollY * 0.05}deg)` }}
-        />
-        <div 
-          className="floating-object bottom-1/4 right-16 w-24 h-24 bg-accent/30 float-slow-animation"
-          style={{ 
-            transform: `translateY(${scrollY * -0.22}px)`,
-            clipPath: 'circle(50% at 50% 50%)'
-          }}
-        />
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16 space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-sm text-accent">
-              <Lightbulb className="h-4 w-4" />
-              <span>Powerful Study Tools</span>
+      {/* Tools Preview */}
+      <section className="relative py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div ref={toolsAnim.ref} className={`space-y-12 ${toolsAnim.isVisible ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="text-center space-y-4">
+              <h2 className="text-4xl md:text-5xl font-bold">
+                <span className="gradient-text">18+ AI Study Tools</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                From flashcards to essays, we've got every study format covered
+              </p>
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold">Everything You Need to Excel</h2>
-          </div>
-          
-          <div ref={toolsAnim.ref} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {tools.map((tool, index) => (
-              <Card 
-                key={index}
-                className={`p-6 bg-card/70 backdrop-blur-sm border-border hover:border-primary/50 card-hover cursor-pointer ${
-                  toolsAnim.isVisible ? `scale-reveal stagger-${(index % 6) + 1}` : 'opacity-0'
-                }`}
-              >
-                <h3 className="text-lg font-semibold mb-2">{tool.name}</h3>
-                <p className="text-sm text-muted-foreground">{tool.desc}</p>
-              </Card>
-            ))}
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {tools.map((tool, index) => (
+                <Card 
+                  key={index}
+                  className={`p-8 bg-gradient-to-br from-card/80 to-card/40 group hover:scale-105 transition-all duration-300 border-2 ${
+                    toolsAnim.isVisible ? `scale-reveal stagger-${index + 1}` : 'opacity-0'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-xl bg-gradient-to-br from-primary to-primary-glow p-3 group-hover:shadow-neon transition-all">
+                      <tool.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors">
+                        {tool.title}
+                      </h3>
+                      <p className="text-muted-foreground">
+                        {tool.description}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            <div className="text-center pt-8">
+              <Link to="/auth">
+                <Button size="lg" variant="secondary" className="text-lg h-14 px-8">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Explore All 18 Tools
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="py-20 relative">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl md:text-5xl font-bold">How It Works</h2>
-            <p className="text-xl text-muted-foreground">Three simple steps to better studying</p>
+      <section className="relative py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center space-y-4 mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Getting Started is <span className="gradient-text">Simple</span>
+            </h2>
           </div>
-          
-          <div ref={stepsAnim.ref} className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
+
+          <div className="grid md:grid-cols-3 gap-8">
             {[
-              { step: "01", title: "Create Account", desc: "Sign up with email verification for secure access" },
-              { step: "02", title: "Choose & Generate", desc: "Select format and enter your topic to generate materials" },
-              { step: "03", title: "Study & Track", desc: "Learn with AI materials and monitor your progress" },
+              { step: "01", title: "Sign Up Free", description: "Create your account in seconds" },
+              { step: "02", title: "Choose Tool", description: "Select from 18+ AI-powered tools" },
+              { step: "03", title: "Generate & Learn", description: "Get instant study materials" },
             ].map((item, index) => (
-              <div 
-                key={index} 
-                className={`text-center space-y-4 ${
-                  stepsAnim.isVisible ? `scroll-reveal stagger-${index + 1}` : 'opacity-0'
-                }`}
-              >
-                <div className="text-4xl font-bold text-primary-glow">{item.step}</div>
-                <h3 className="text-xl font-semibold">{item.title}</h3>
-                <p className="text-muted-foreground">{item.desc}</p>
+              <div key={index} className="text-center space-y-4 group">
+                <div className="text-6xl font-bold gradient-text opacity-30 group-hover:opacity-100 transition-opacity">
+                  {item.step}
+                </div>
+                <h3 className="text-2xl font-bold group-hover:text-primary transition-colors">
+                  {item.title}
+                </h3>
+                <p className="text-muted-foreground">
+                  {item.description}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 relative overflow-hidden perspective-container">
-        {/* Parallax Background */}
-        <div 
-          className="absolute inset-0 parallax-bg opacity-20"
-          style={{
-            transform: `translateY(${scrollY * 0.2}px)`,
-            backgroundImage: `url(${ctaBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-        
-        {/* Final Animated Objects */}
-        <div 
-          className="floating-object top-10 left-1/4 w-40 h-40 bg-primary-glow/20 rounded-full blur-3xl float-animation"
-          style={{ transform: `translateY(${scrollY * -0.12}px) scale(${1 + scrollY * 0.0001})` }}
-        />
-        <div 
-          className="floating-object bottom-10 right-1/4 w-28 h-28 bg-accent/25 rotate-3d-animation pulse-glow-animation"
-          style={{ 
-            transform: `translateY(${scrollY * -0.16}px)`,
-            clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
-          }}
-        />
-        <div className="container mx-auto px-4 relative z-10">
-          <Card 
-            ref={ctaAnim.ref}
-            className={`p-12 bg-gradient-to-br from-primary/10 to-primary-glow/10 backdrop-blur-xl border-primary/20 text-center space-y-6 relative overflow-hidden ${
-              ctaAnim.isVisible ? 'scale-reveal' : 'opacity-0'
-            }`}
-          >
-            <div className="absolute inset-0 mesh-bg opacity-20" />
-            <div className="relative z-10 space-y-6">
-              <h2 className="text-3xl md:text-5xl font-bold">Ready to Study Smarter?</h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Join thousands of students using AI to ace their exams with personalized study materials
-              </p>
+      {/* Final CTA */}
+      <section className="relative py-20 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <Card className="p-12 bg-gradient-to-br from-card/80 via-primary/5 to-card/80 border-2 border-primary/30 text-center space-y-8 hover:border-primary/50 transition-all">
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Ready to <span className="gradient-text">Transform</span> Your Learning?
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Join thousands of students already using AI to study smarter, not harder.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/auth">
-                <Button size="lg" className="bg-primary hover:bg-primary-glow shadow-lg hover:shadow-primary/50 transition-all text-lg px-8 h-14">
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                <Button size="lg" className="text-lg h-14 px-8 shadow-neon">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Start Free Now
                 </Button>
               </Link>
             </div>

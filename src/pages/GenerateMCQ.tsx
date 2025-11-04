@@ -134,8 +134,12 @@ const GenerateMCQ = () => {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen pt-24 pb-12 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 mesh-bg opacity-20" />
+      <div className="fixed inset-0 bg-gradient-to-b from-background via-transparent to-background" />
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Header */}
           <div className="space-y-4">
@@ -155,7 +159,7 @@ const GenerateMCQ = () => {
 
           {/* Input Form */}
           {!generated ? (
-            <Card className="p-8 bg-card border-border space-y-6">
+            <Card className="p-8 bg-card/60 backdrop-blur-md border-2 border-border/50 space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="topic">Topic</Label>
