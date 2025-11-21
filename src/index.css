@@ -7,77 +7,53 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  :root {
-    /* Base colors - Deep dark with vibrant neon accents */
+  /* Default (Dark) Theme */
+  :root, [data-theme="dark"] {
     --background: 240 12% 4%;
     --foreground: 210 40% 98%;
-    
-    /* Primary colors - Electric purple/magenta */
     --card: 240 10% 8%;
     --card-foreground: 210 40% 98%;
-    --card-hover: 240 10% 10%;
-    
     --popover: 240 10% 8%;
     --popover-foreground: 210 40% 98%;
-    
     --primary: 280 100% 60%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 290 100% 70%;
-    --primary-variant: 270 100% 55%;
-    
-    /* Secondary colors - Cyan/Blue */
     --secondary: 195 100% 50%;
     --secondary-foreground: 0 0% 100%;
-    
-    /* Accent colors - Green/Teal */
     --accent: 160 100% 50%;
     --accent-foreground: 240 12% 4%;
-    --accent-glow: 170 100% 60%;
-    
-    /* Destructive colors */
     --destructive: 0 100% 60%;
     --destructive-foreground: 0 0% 98%;
-    
-    /* Success colors */
-    --success: 145 80% 50%;
-    --success-foreground: 0 0% 98%;
-    
-    /* Muted colors */
-    --muted: 240 10% 12%;
-    --muted-foreground: 215 20% 65%;
-    
-    /* Borders and UI elements */
     --border: 240 10% 18%;
     --input: 240 10% 14%;
     --ring: 280 100% 60%;
-
-    /* Utility variables */
     --radius: 0.85rem;
-
-    /* Gradients - Vibrant and eye-catching */
-    --gradient-primary: linear-gradient(135deg, hsl(280, 100%, 60%), hsl(195, 100%, 50%));
-    --gradient-secondary: linear-gradient(135deg, hsl(195, 100%, 50%), hsl(160, 100%, 50%));
-    --gradient-accent: linear-gradient(135deg, hsl(290, 100%, 70%), hsl(280, 100%, 60%));
-    --gradient-mesh: radial-gradient(at 40% 20%, hsl(280, 100%, 25%) 0px, transparent 60%),
-                     radial-gradient(at 80% 0%, hsl(195, 100%, 25%) 0px, transparent 60%),
-                     radial-gradient(at 0% 50%, hsl(160, 100%, 25%) 0px, transparent 60%),
-                     radial-gradient(at 100% 100%, hsl(290, 100%, 25%) 0px, transparent 60%);
-    --gradient-subtle: linear-gradient(180deg, hsl(240, 10%, 8%), hsl(240, 12%, 4%));
-    
-    /* Shadows - Glowing neon effects */
-    --shadow-sm: 0 2px 8px -2px hsl(280 100% 60% / 0.2);
-    --shadow-md: 0 4px 16px -4px hsl(280 100% 60% / 0.3);
-    --shadow-lg: 0 10px 30px -10px hsl(280 100% 60% / 0.4);
-    --shadow-xl: 0 20px 50px -15px hsl(280 100% 60% / 0.5);
-    --shadow-glow: 0 0 50px hsl(280 100% 60% / 0.4);
-    --shadow-glow-lg: 0 0 80px hsl(280 100% 60% / 0.6);
-    --shadow-neon: 0 0 20px hsl(280 100% 60% / 0.8), 0 0 40px hsl(280 100% 60% / 0.4);
-    
-    /* Transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+
+
+  [data-theme="vintage"] {
+    --background: 35 25% 90%; /* Softer, aged paper look */
+    --foreground: 35 20% 25%; /* Darker, classic text */
+    --card: 35 20% 95%;      /* Lighter card for contrast */
+    --card-foreground: 35 20% 25%;
+    --popover: 35 20% 95%;
+    --popover-foreground: 35 20% 25%;
+    --primary: 15 50% 40%;   /* Muted, antique red/brown */
+    --primary-foreground: 35 25% 98%;
+    --primary-glow: 15 50% 50%; /* Slightly brighter primary for glow */
+    --secondary: 45 30% 70%; /* Muted gold/tan */
+    --secondary-foreground: 35 20% 25%;
+    --accent: 75 30% 50%;    /* Desaturated green */
+    --accent-foreground: 35 25% 98%;
+    --destructive: 0 60% 50%; /* Standard destructive red */
+    --destructive-foreground: 35 25% 98%;
+    --border: 35 15% 75%;    /* Soft, light border */
+    --input: 35 15% 85%;     /* Light input field */
+    --ring: 15 50% 40%;
+    --radius: 0.2rem;       /* Slightly sharper corners for vintage feel */
+  }
+
 }
 
 @layer base {
@@ -98,13 +74,13 @@ All colors MUST be HSL.
 
 @layer utilities {
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-glow to-accent;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
     animation: gradient-shift 3s ease infinite;
     background-size: 200% auto;
   }
 
   .gradient-text-secondary {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent to-primary-glow;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent to-primary;
   }
 
   .glow-effect {
@@ -126,7 +102,7 @@ All colors MUST be HSL.
 
   .card-elegant {
     @apply bg-card/95 border-border/50 backdrop-blur-sm;
-    background: linear-gradient(135deg, hsl(222, 47%, 11%), hsl(222, 47%, 13%));
+    background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.8));
   }
 
   .mesh-bg {
@@ -191,6 +167,17 @@ All colors MUST be HSL.
       box-shadow: 0 0 40px hsl(var(--primary) / 0.6);
     }
   }
+
+@keyframes slide-in-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 @keyframes slide-up {
   from {
@@ -277,9 +264,8 @@ All colors MUST be HSL.
     animation: scale-up 0.6s ease-out forwards;
   }
 
-  .parallax-bg {
-    will-change: transform;
-    transition: transform 0.1s ease-out;
+  .scroll-animation {
+    animation: slide-in-bottom 0.8s ease-out forwards;
   }
 
   .stagger-1 { animation-delay: 0.1s; }

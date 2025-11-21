@@ -28,24 +28,64 @@ const GenerateVocabulary = () => {
     }
 
     setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-vocabulary', {
-        body: { topic, difficulty, count: parseInt(count) }
-      });
+    setVocabulary([]);
 
-      if (error) {
-        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-vocabulary`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ topic, difficulty, count: parseInt(count) }),
         }
-        if (error.message?.includes('402') || error.message?.includes('payment')) {
-          throw new Error('AI credits depleted. Please add credits to continue.');
-        }
-        throw error;
+      );
+
+      if (!response.ok) {
+        throw new Error(await response.text());
       }
 
-      const words = data.vocabulary.words || [];
-      setVocabulary(words);
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Failed to read response stream");
+      }
 
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonString = line.substring(6);
+              const chunk = JSON.parse(jsonString);
+
+              if (chunk.candidates && chunk.candidates.length > 0) {
+                const functionCall = chunk.candidates[0].content.parts[0].functionCall;
+                if (functionCall && functionCall.args) {
+                  setVocabulary(prev => [...prev, ...(functionCall.args.words || [])]);
+                }
+              }
+            } catch (e) {
+              // Incomplete JSON
+            }
+          }
+        }
+      }
+      
       // Save to database
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -53,7 +93,7 @@ const GenerateVocabulary = () => {
           user_id: user.id,
           type: 'vocabulary',
           title: `Vocabulary: ${topic}`,
-          content: data.vocabulary,
+          content: { words: vocabulary },
           difficulty,
           metadata: { topic, count: parseInt(count) }
         });
@@ -63,6 +103,7 @@ const GenerateVocabulary = () => {
         title: "Success",
         description: "Vocabulary list generated successfully!",
       });
+
     } catch (error) {
       console.error('Error:', error);
       toast({

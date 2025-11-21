@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,13 @@ const GenerateDiagram = () => {
   const [loading, setLoading] = useState(false);
   const [diagram, setDiagram] = useState<any>(null);
   const { toast } = useToast();
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+  }, []);
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -28,40 +35,82 @@ const GenerateDiagram = () => {
     }
 
     setLoading(true);
+    setDiagram(null);
+
     try {
-      const { data, error } = await supabase.functions.invoke('generate-diagram', {
-        body: { topic, type: diagramType, difficulty }
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("Not authenticated");
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-diagram`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ topic, type: diagramType, difficulty })
       });
 
-      if (error) {
-        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-          throw new Error('Rate limit exceeded. Please try again in a few moments.');
-        }
-        if (error.message?.includes('402') || error.message?.includes('payment')) {
-          throw new Error('AI credits depleted. Please add credits to continue.');
-        }
-        throw error;
+      if (!response.body) {
+        throw new Error("The response body is empty.");
       }
 
-      setDiagram(data.diagram);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      // Save to database
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('generated_materials').insert({
-          user_id: user.id,
-          type: 'diagram',
-          title: `${diagramType}: ${topic}`,
-          content: data.diagram,
-          difficulty,
-          metadata: { topic, diagramType }
-        });
+        buffer += decoder.decode(value, { stream: true });
+        
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonString = line.substring(6);
+              const chunk = JSON.parse(jsonString);
+
+              if (chunk.candidates && chunk.candidates.length > 0) {
+                const functionCall = chunk.candidates[0].content.parts[0].functionCall;
+                if (functionCall && functionCall.args) {
+                  setDiagram((prev: any) => {
+                    const newDiagram = { ...prev };
+                    const args = functionCall.args;
+                    if (args.title) newDiagram.title = args.title;
+                    if (args.description) newDiagram.description = (newDiagram.description || "") + args.description;
+                    if (args.elements) newDiagram.elements = [...(newDiagram.elements || []), ...args.elements];
+                    if (args.connections) newDiagram.connections = [...(newDiagram.connections || []), ...args.connections];
+                    return newDiagram;
+                  });
+                }
+              }
+            } catch (e) {
+              // Incomplete JSON
+            }
+          }
+        }
       }
 
       toast({
         title: "Success",
         description: "Diagram generated successfully!",
       });
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && diagram) {
+        await supabase.from('generated_materials').insert({
+          user_id: user.id,
+          type: 'diagram',
+          title: `${diagramType}: ${topic}`,
+          content: diagram,
+          difficulty,
+          metadata: { topic, diagramType }
+        });
+      }
+
     } catch (error) {
       console.error('Error:', error);
       toast({

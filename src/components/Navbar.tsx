@@ -1,10 +1,19 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Menu, X, LogOut, User as UserIcon } from "lucide-react";
+import { Sparkles, Menu, X, LogOut, User as UserIcon, Settings, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,131 +43,126 @@ const Navbar = () => {
     navigate("/");
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname.startsWith(path);
+
+  const navLinks = [
+    { to: "/home", text: "Home" },
+    { to: "/generate", text: "Generate" },
+    { to: "/dashboard", text: "Dashboard" },
+  ];
+  
+  const getInitials = (email: string | undefined) => {
+    if (!email) return "U";
+    return email.substring(0, 2).toUpperCase();
+  };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 glass-effect">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-md">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
+        <div className="flex h-20 items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="rounded-xl bg-gradient-to-br from-primary to-primary-glow p-2 shadow-lg group-hover:shadow-glow transition-all duration-300 group-hover:scale-110">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
+              <Sparkles className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold gradient-text">StudyForge AI</span>
+            <span className="text-2xl font-bold gradient-text">StudyForge AI</span>
           </Link>
 
-          {/* Desktop Navigation */}
           {user && (
-            <div className="hidden md:flex items-center gap-6">
-              <Link
-                to="/home"
-                className={`text-sm font-medium transition-all hover:text-primary relative group ${
-                  isActive("/home") ? "text-primary" : "text-foreground/80"
-                }`}
-              >
-                Home
-                {isActive("/home") && (
-                  <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-primary-glow rounded-full" />
-                )}
-              </Link>
-              <Link
-                to="/generate"
-                className={`text-sm font-medium transition-all hover:text-primary relative group ${
-                  isActive("/generate") ? "text-primary" : "text-foreground/80"
-                }`}
-              >
-                Generate
-                {isActive("/generate") && (
-                  <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-primary-glow rounded-full" />
-                )}
-              </Link>
-              <Link
-                to="/dashboard"
-                className={`text-sm font-medium transition-all hover:text-primary relative ${
-                  isActive("/dashboard") ? "text-primary" : "text-foreground/80"
-                }`}
-              >
-                Dashboard
-                {isActive("/dashboard") && (
-                  <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-primary-glow rounded-full" />
-                )}
-              </Link>
+            <div className="hidden md:flex items-center gap-2 bg-muted/50 p-1 rounded-full">
+              {navLinks.map((link) => (
+                <Link key={link.to} to={link.to}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`transition-all text-base px-4 py-2 rounded-full ${
+                      isActive(link.to)
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {link.text}
+                  </Button>
+                </Link>
+              ))}
             </div>
           )}
 
-          {/* CTA Button */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-3">
             {user ? (
-              <>
-                <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                  <UserIcon className="mr-2 h-4 w-4" />
-                  {user.email?.split("@")[0]}
-                </Button>
-                <Button 
-                  onClick={handleLogout} 
-                  variant="outline" 
-                  size="sm"
-                  className="border-border/50 hover:border-primary/50 hover:bg-card transition-all"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10 border-2 border-primary/50">
+                      <AvatarImage src={user.user_metadata.avatar_url} alt={user.email} />
+                      <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.user_metadata.display_name || user.email?.split('@')[0]}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link to="/auth">
-                <Button className="bg-gradient-to-r from-primary to-primary-glow hover:shadow-glow-lg transition-all duration-300">
+                <Button className="hidden md:flex bg-gradient-to-r from-primary to-primary-glow hover:shadow-glow-lg transition-all duration-300">
                   Get Started
                 </Button>
               </Link>
             )}
+             <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-foreground hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-foreground hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border/40 glass-effect animate-fade-in-down">
-          <div className="container mx-auto px-4 py-4 space-y-4">
+        <div className="md:hidden border-t border-border/40 bg-background/95 animate-fade-in-down">
+          <div className="container mx-auto px-4 py-4 space-y-2">
             {user ? (
               <>
-                <Link
-                  to="/home"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors py-2"
-                >
-                  Home
-                </Link>
-                <Link
-                  to="/generate"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors py-2"
-                >
-                  Generate
-                </Link>
-                <Link
-                  to="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors py-2"
-                >
-                  Dashboard
-                </Link>
-                <Button
-                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }} 
-                  variant="outline" 
-                  className="w-full justify-start border-border/50 hover:border-primary/50"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block text-base font-medium py-3 px-4 rounded-md transition-colors ${
+                      isActive(link.to)
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    {link.text}
+                  </Link>
+                ))}
               </>
             ) : (
               <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>

@@ -34,7 +34,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/profile" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
+                <Link to="/dashboard/profile" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
                   Profile
                 </Link>
               </li>
@@ -46,24 +46,9 @@ const Footer = () => {
             <h3 className="font-semibold mb-4 text-foreground">Resources</h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
-                  Documentation
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
-                  Support
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
+                <Link to="/faq" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
                   FAQ
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -72,21 +57,7 @@ const Footer = () => {
           <div className="animate-fade-in" style={{ animationDelay: "0.3s" }}>
             <h3 className="font-semibold mb-4 text-foreground">Legal</h3>
             <ul className="space-y-3 text-sm">
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-all hover:translate-x-1 inline-block">
-                  Cookie Policy
-                </a>
-              </li>
+              {/* Other legal links would go here if needed */}
             </ul>
           </div>
         </div>
@@ -95,34 +66,9 @@ const Footer = () => {
           <p className="text-sm text-muted-foreground">
             © 2025 StudyForge AI. All rights reserved.
           </p>
-          
-          <div className="flex gap-4">
-            <a 
-              href="https://twitter.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-all hover:scale-110"
-            >
-              <Twitter className="h-5 w-5" />
-            </a>
-            <a 
-              href="https://github.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-all hover:scale-110"
-            >
-              <Github className="h-5 w-5" />
-            </a>
-            <a 
-              href="https://linkedin.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-all hover:scale-110"
-            >
-              <Linkedin className="h-5 w-5" />
-            </a>
-          </div>
+          {/* Social media links removed */}
         </div>
+
       </div>
     </footer>
   );

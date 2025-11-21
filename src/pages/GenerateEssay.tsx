@@ -24,7 +24,7 @@ const GenerateEssay = () => {
   const [wordCount, setWordCount] = useState("500");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [essay, setEssay] = useState<Essay | null>(null);
+  const [essay, setEssay] = useState<Partial<Essay>>({});
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -32,64 +32,124 @@ const GenerateEssay = () => {
       toast({
         title: "Topic Required",
         description: "Please enter a topic for your essay",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
+    setGenerated(true);
+    setEssay({});
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-essay', {
-        body: { topic: topic.trim(), essayType, wordCount: parseInt(wordCount) || 500 }
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      if (error) {
-        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-essay`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            topic: topic.trim(),
+            essayType,
+            wordCount: parseInt(wordCount) || 500,
+            thesis,
+          }),
         }
-        if (error.message?.includes('402') || error.message?.includes('payment')) {
-          throw new Error('AI credits depleted. Please add credits to continue.');
+      );
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error("Rate limit exceeded. Please try again later.");
         }
-        throw error;
+        if (response.status === 402) {
+          throw new Error("AI credits depleted. Please add credits to continue.");
+        }
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to generate essay");
       }
 
-      if (!data?.essay) {
-        throw new Error("No essay generated");
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Failed to read response stream");
       }
 
-      setEssay(data.essay);
-      setGenerated(true);
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonString = line.substring(6);
+              const chunk = JSON.parse(jsonString);
+
+              if (chunk.candidates && chunk.candidates.length > 0) {
+                const functionCall = chunk.candidates[0].content.parts[0].functionCall;
+                if (functionCall && functionCall.args) {
+                  setEssay(prev => {
+                    const newEssay = { ...prev };
+                    const args = functionCall.args;
+                    if (args.title) newEssay.title = args.title;
+                    if (args.content) newEssay.content = (newEssay.content || "") + args.content;
+                    if (args.citations) newEssay.citations = [...(newEssay.citations || []), ...args.citations];
+                    if (args.outline) newEssay.outline = [...(newEssay.outline || []), ...args.outline];
+                    return newEssay;
+                  });
+                }
+              }
+            } catch (e) {
+              // Incomplete JSON
+            }
+          }
+        }
+      }
 
       toast({
-        title: "Essay Generated!",
-        description: `Created ${essayType} essay on ${topic}`,
+        title: "Essay Generation Complete!",
+        description: `Finished creating essay on ${topic}`,
       });
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to generate essay",
-        variant: "destructive"
+        variant: "destructive",
       });
-    } finally {
+      setGenerated(false);
+    }
+    finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!essay) return;
+    if (!essay?.title || !essay?.content) return;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("generated_materials").insert([{
-        user_id: user.id,
-        title: `Essay: ${topic}`,
-        type: "essay",
-        content: { essay } as any,
-        metadata: { topic, essayType, wordCount } as any
-      }]);
+      const { error } = await supabase.from("generated_materials").insert([
+        {
+          user_id: user.id,
+          title: `Essay: ${topic}`,
+          type: "essay",
+          content: { essay } as any,
+          metadata: { topic, essayType, wordCount } as any,
+        },
+      ]);
 
       if (error) throw error;
 
@@ -101,7 +161,7 @@ const GenerateEssay = () => {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -202,42 +262,40 @@ const GenerateEssay = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Your Essay</h2>
-                <Button onClick={handleSave} variant="outline">
-                  <Save className="mr-2 h-4 w-4" />
-                  Save to Dashboard
-                </Button>
+                {!loading && (
+                  <Button onClick={handleSave} variant="outline">
+                    <Save className="mr-2 h-4 w-4" />
+                    Save to Dashboard
+                  </Button>
+                )}
               </div>
 
-              {essay && (
-                <>
-                  <Card className="p-8 bg-card border-border space-y-4">
-                    <h3 className="text-2xl font-bold">{essay.title}</h3>
-                    
-                    <div className="prose prose-invert max-w-none">
-                      {essay.content.split('\n\n').map((paragraph, idx) => (
-                        <p key={idx} className="mb-4 text-foreground/90 leading-relaxed">
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
-                  </Card>
+              <Card className="p-8 bg-card border-border space-y-4">
+                <h3 className="text-2xl font-bold">{essay.title || "Generating title..."}</h3>
+                
+                <div className="prose prose-invert max-w-none">
+                  {(essay.content || "Generating content...").split('\n\n').map((paragraph, idx) => (
+                    <p key={idx} className="mb-4 text-foreground/90 leading-relaxed">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </Card>
 
-                  {essay.citations && essay.citations.length > 0 && (
-                    <Card className="p-6 bg-card border-border">
-                      <h4 className="font-semibold text-lg mb-3">References</h4>
-                      <ul className="space-y-2">
-                        {essay.citations.map((citation, idx) => (
-                          <li key={idx} className="text-sm text-muted-foreground">
-                            {citation}
-                          </li>
-                        ))}
-                      </ul>
-                    </Card>
-                  )}
-                </>
+              {essay.citations && essay.citations.length > 0 && (
+                <Card className="p-6 bg-card border-border">
+                  <h4 className="font-semibold text-lg mb-3">References</h4>
+                  <ul className="space-y-2">
+                    {essay.citations.map((citation, idx) => (
+                      <li key={idx} className="text-sm text-muted-foreground">
+                        {citation}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
               )}
 
-              <Button onClick={() => { setGenerated(false); setEssay(null); }} variant="outline" className="w-full">
+              <Button onClick={() => { setGenerated(false); setEssay({}); }} variant="outline" className="w-full">
                 Generate New Essay
               </Button>
             </div>

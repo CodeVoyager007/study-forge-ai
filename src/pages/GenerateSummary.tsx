@@ -24,7 +24,7 @@ const GenerateSummary = () => {
   const [format, setFormat] = useState("paragraphs");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const [summary, setSummary] = useState<Partial<Summary>>({});
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -32,45 +32,106 @@ const GenerateSummary = () => {
       toast({
         title: "Topic Required",
         description: "Please enter a topic for summary",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
+    setGenerated(true);
+    setSummary({});
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-summary', {
-        body: { topic: topic.trim(), length, format: format === "bullet" ? "bullet" : "paragraph" }
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      if (error) {
-        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-summary`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            topic: topic.trim(),
+            sourceText,
+            length,
+            format: format === "bullets" ? "bullet" : "paragraph",
+          }),
         }
-        if (error.message?.includes('402') || error.message?.includes('payment')) {
-          throw new Error('AI credits depleted. Please add credits to continue.');
-        }
-        throw error;
+      );
+
+      if (!response.ok) {
+        throw new Error(await response.text());
       }
 
-      if (!data?.summary) {
-        throw new Error("No summary generated");
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Failed to read response stream");
       }
 
-      setSummary(data.summary);
-      setGenerated(true);
+      const decoder = new TextDecoder();
+      let buffer = "";
 
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonString = line.substring(6);
+              const chunk = JSON.parse(jsonString);
+
+              if (chunk.candidates && chunk.candidates.length > 0) {
+                const functionCall = chunk.candidates[0].content.parts[0].functionCall;
+                if (functionCall && functionCall.args) {
+                  setSummary(prev => {
+                    const newSummary = { ...prev };
+                    const args = functionCall.args;
+                    if (args.title) newSummary.title = args.title;
+                    if (args.content) {
+                      if (typeof args.content === 'string') {
+                        newSummary.content = (newSummary.content || "") + args.content;
+                      } else if (Array.isArray(args.content)) {
+                        newSummary.content = [...(newSummary.content || []), ...args.content];
+                      }
+                    }
+                    if (args.keyPoints) {
+                      newSummary.keyPoints = [...(newSummary.keyPoints || []), ...args.keyPoints];
+                    }
+                    if (args.tags) {
+                      newSummary.tags = [...(newSummary.tags || []), ...args.tags];
+                    }
+                    return newSummary;
+                  });
+                }
+              }
+            } catch (e) {
+              // Incomplete JSON
+            }
+          }
+        }
+      }
+      
       toast({
         title: "Summary Generated!",
-        description: `Created ${length} summary on ${topic}`,
+        description: `Finished creating summary on ${topic}`,
       });
+
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to generate summary",
-        variant: "destructive"
+        variant: "destructive",
       });
+      setGenerated(false);
     } finally {
       setLoading(false);
     }
@@ -204,51 +265,50 @@ const GenerateSummary = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Your Summary</h2>
-                <Button onClick={handleSave} variant="outline">
-                  <Save className="mr-2 h-4 w-4" />
-                  Save
-                </Button>
+                {!loading && (
+                  <Button onClick={handleSave} variant="outline">
+                    <Save className="mr-2 h-4 w-4" />
+                    Save
+                  </Button>
+                )}
               </div>
 
-              {summary && (
-                <>
-                  <Card className="p-8 bg-card border-border space-y-4">
-                    <h3 className="text-2xl font-bold">{summary.title}</h3>
-                    
-                    <div className="prose prose-invert max-w-none">
-                      {Array.isArray(summary.content) ? (
-                        <ul className="space-y-2">
-                          {summary.content.map((point, idx) => (
-                            <li key={idx} className="text-foreground/90">{point}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        summary.content.split('\n\n').map((paragraph, idx) => (
-                          <p key={idx} className="mb-4 text-foreground/90 leading-relaxed">
-                            {paragraph}
-                          </p>
-                        ))
-                      )}
-                    </div>
-                  </Card>
-
-                  {summary.keyPoints && summary.keyPoints.length > 0 && (
-                    <Card className="p-6 bg-card border-border">
-                      <h4 className="font-semibold text-lg mb-3">Key Takeaways</h4>
-                      <ul className="space-y-2">
-                        {summary.keyPoints.map((point, idx) => (
-                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                            <span className="text-primary mt-1">•</span>
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </Card>
+              <Card className="p-8 bg-card border-border space-y-4">
+                <h3 className="text-2xl font-bold">{summary.title || 'Generating...'}</h3>
+                
+                <div className="prose prose-invert max-w-none">
+                  {typeof summary.content === 'string' ? (
+                    summary.content.split('\n\n').map((paragraph, idx) => (
+                      <p key={idx} className="mb-4 text-foreground/90 leading-relaxed">
+                        {paragraph || '...'}
+                      </p>
+                    ))
+                  ) : (
+                    <ul className="space-y-2">
+                      {(summary.content || []).map((point, idx) => (
+                        <li key={idx} className="text-foreground/90">{point}</li>
+                      ))}
+                    </ul>
                   )}
-                </>
+                  {loading && <p>...</p>}
+                </div>
+              </Card>
+
+              {summary.keyPoints && summary.keyPoints.length > 0 && (
+                <Card className="p-6 bg-card border-border">
+                  <h4 className="font-semibold text-lg mb-3">Key Takeaways</h4>
+                  <ul className="space-y-2">
+                    {summary.keyPoints.map((point, idx) => (
+                      <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-primary mt-1">•</span>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
               )}
 
-              <Button onClick={() => { setGenerated(false); setSummary(null); }} variant="outline" className="w-full">
+              <Button onClick={() => { setGenerated(false); setSummary({}); }} variant="outline" className="w-full">
                 Generate New Summary
               </Button>
             </div>

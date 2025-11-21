@@ -7,16 +7,16 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     const { topic, difficulty, count = 20 } = await req.json();
     console.log('Generating vocabulary:', { topic, difficulty, count });
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured');
     }
 
     const systemPrompt = `You are an expert language teacher. Generate educational vocabulary only. Do not include offensive, harmful, or inappropriate words.`;
@@ -29,49 +29,59 @@ serve(async (req) => {
 5. Synonyms
 6. Memory tip or mnemonic`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "generate_vocabulary",
-            description: "Generate vocabulary words with definitions",
-            parameters: {
-              type: "object",
-              properties: {
-                words: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      word: { type: "string" },
-                      partOfSpeech: { type: "string" },
-                      definition: { type: "string" },
-                      example: { type: "string" },
-                      synonyms: { type: "array", items: { type: "string" } },
-                      memoryTip: { type: "string" }
-                    },
-                    required: ["word", "definition", "example"]
-                  }
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: `${systemPrompt}\n${userPrompt}` }],
+            },
+          ],
+          tools: [{
+            functionDeclarations: [
+              {
+                name: "generate_vocabulary",
+                description: "Generate vocabulary words with definitions",
+                parameters: {
+                  type: "OBJECT",
+                  properties: {
+                    words: {
+                      type: "ARRAY",
+                      items: {
+                        type: "OBJECT",
+                        properties: {
+                          word: { type: "STRING" },
+                          partOfSpeech: { type: "STRING" },
+                          definition: { type: "STRING" },
+                          example: { type: "STRING" },
+                          synonyms: { type: "ARRAY", items: { type: "STRING" } },
+                          memoryTip: { type: "STRING" }
+                        },
+                        required: ["word", "definition", "example"]
+                      }
+                    }
+                  },
+                  required: ["words"]
                 }
-              },
-              required: ["words"]
-            }
-          }
-        }],
-        tool_choice: { type: "function", function: { name: "generate_vocabulary" } }
-      }),
-    });
+              }
+            ]
+          }],
+          toolConfig: {
+            functionCallingConfig: {
+              mode: "ANY",
+              allowedFunctionNames: ["generate_vocabulary"],
+            },
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -79,18 +89,15 @@ serve(async (req) => {
       throw new Error(`AI generation failed: ${response.status}`);
     }
 
-    const data = await response.json();
-    const toolCall = data.choices[0].message.tool_calls?.[0];
-    
-    if (!toolCall) {
-      throw new Error('No structured output received from AI');
-    }
-
-    const vocabulary = JSON.parse(toolCall.function.arguments);
-
-    return new Response(JSON.stringify({ vocabulary }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return new Response(response.body, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
     });
+
   } catch (error) {
     console.error('Error in generate-vocabulary:', error);
     return new Response(

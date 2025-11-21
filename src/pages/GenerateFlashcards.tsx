@@ -8,7 +8,6 @@ import { Sparkles, Save, ArrowLeft, RotateCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface Flashcard {
   front: string;
@@ -31,49 +30,99 @@ const GenerateFlashcards = () => {
       toast({
         title: "Topic Required",
         description: "Please enter a topic to generate flashcards",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
+    setGenerated(true);
+    setFlashcards([]);
+    setFlipped([]);
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-flashcards', {
-        body: { topic: topic.trim(), numCards: numCards[0], difficulty }
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      if (error) {
-        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-flashcards`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            topic: topic.trim(),
+            numCards: numCards[0],
+            difficulty,
+          }),
         }
-        if (error.message?.includes('402') || error.message?.includes('payment')) {
-          throw new Error('AI credits depleted. Please add credits to continue.');
+      );
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error("Rate limit exceeded. Please try again later.");
         }
-        throw error;
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to generate flashcards");
       }
 
-      if (!data?.flashcards || data.flashcards.length === 0) {
-        throw new Error("No flashcards generated");
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Failed to read response stream");
       }
 
-      setFlashcards(data.flashcards);
-      setGenerated(true);
-      setFlipped([]);
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonString = line.substring(6);
+              const chunk = JSON.parse(jsonString);
+
+              if (chunk.candidates && chunk.candidates.length > 0) {
+                const functionCall = chunk.candidates[0].content.parts[0].functionCall;
+                if (functionCall && functionCall.args) {
+                  const partialCards = functionCall.args.flashcards || [];
+                  setFlashcards(currentCards => [...currentCards, ...partialCards]);
+                }
+              }
+            } catch (e) {
+              // Incomplete JSON
+            }
+          }
+        }
+      }
 
       toast({
         title: "Flashcards Generated!",
-        description: `Created ${data.flashcards.length} flashcards on ${topic}`,
+        description: `Finished creating ${flashcards.length} cards on ${topic}`,
       });
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to generate flashcards",
-        variant: "destructive"
+        variant: "destructive",
       });
+      setGenerated(false);
     } finally {
       setLoading(false);
     }
+  };
+  
+  const isComplete = (card: Flashcard) => {
+    return card.front && card.back;
   };
 
   const toggleFlip = (index: number) => {
@@ -115,13 +164,11 @@ const GenerateFlashcards = () => {
 
   return (
     <div className="min-h-screen pt-24 pb-12 relative overflow-hidden">
-      {/* Animated Background */}
       <div className="fixed inset-0 mesh-bg opacity-20" />
       <div className="fixed inset-0 bg-gradient-to-b from-background via-transparent to-background" />
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto space-y-8">
-          {/* Header */}
           <div className="space-y-4">
             <Link to="/generate">
               <Button variant="ghost" size="sm" className="mb-4">
@@ -137,7 +184,6 @@ const GenerateFlashcards = () => {
             </p>
           </div>
 
-          {/* Input Form */}
           {!generated ? (
             <Card className="p-8 bg-card/60 backdrop-blur-md border-2 border-border/50 space-y-6">
               <div className="space-y-4">
@@ -182,21 +228,22 @@ const GenerateFlashcards = () => {
             </Card>
           ) : (
             <>
-              {/* Generated Flashcards */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold">Your Flashcards</h2>
-                  <Button onClick={handleSave} variant="outline">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save to Dashboard
-                  </Button>
+                  {!loading && (
+                    <Button onClick={handleSave} variant="outline">
+                      <Save className="mr-2 h-4 w-4" />
+                      Save to Dashboard
+                    </Button>
+                  )}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   {flashcards.map((card, index) => (
                     <div
                       key={index}
-                      onClick={() => toggleFlip(index)}
+                      onClick={() => isComplete(card) && toggleFlip(index)}
                       className="cursor-pointer perspective-1000"
                     >
                       <Card 
@@ -207,13 +254,17 @@ const GenerateFlashcards = () => {
                         } hover:border-primary/50 card-hover`}
                       >
                         <div className="space-y-4">
-                          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                            <RotateCw className="h-4 w-4" />
-                            <span>Click to flip</span>
-                          </div>
-                          <p className="text-lg font-medium">
-                            {flipped.includes(index) ? card.back : card.front}
-                          </p>
+                          {!isComplete(card) ? <p>Loading...</p> : (
+                            <>
+                              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                <RotateCw className="h-4 w-4" />
+                                <span>Click to flip</span>
+                              </div>
+                              <p className="text-lg font-medium">
+                                {flipped.includes(index) ? card.back : card.front}
+                              </p>
+                            </>
+                          )}
                         </div>
                       </Card>
                     </div>

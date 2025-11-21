@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,47 +34,98 @@ const GenerateMCQ = () => {
       toast({
         title: "Topic Required",
         description: "Please enter a topic to generate MCQs",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
+    setGenerated(true);
+    setMcqs([]);
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-mcqs', {
-        body: { topic: topic.trim(), difficulty, numQuestions: numQuestions[0] }
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      if (error) {
-        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-mcqs`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            topic: topic.trim(),
+            difficulty,
+            numQuestions: numQuestions[0],
+          }),
         }
-        if (error.message?.includes('402') || error.message?.includes('payment')) {
-          throw new Error('AI credits depleted. Please add credits to continue.');
+      );
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error(
+            "Rate limit exceeded. Please try again in a few moments."
+          );
         }
-        throw error;
+        if (response.status === 402) {
+          throw new Error("AI credits depleted. Please add credits to continue.");
+        }
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to generate MCQs");
       }
 
-      if (!data?.mcqs || data.mcqs.length === 0) {
-        throw new Error("No MCQs generated");
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Failed to read response stream");
       }
 
-      setMcqs(data.mcqs);
-      setGenerated(true);
-      setSubmitted(false);
-      setUserAnswers({});
+      const decoder = new TextDecoder();
+      let buffer = "";
 
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process line by line
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep the last partial line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonString = line.substring(6);
+              const chunk = JSON.parse(jsonString);
+
+              if (chunk.candidates && chunk.candidates.length > 0) {
+                const functionCall = chunk.candidates[0].content.parts[0].functionCall;
+                if (functionCall && functionCall.args) {
+                  const partialMcqs = functionCall.args.questions || [];
+                  setMcqs(currentMcqs => [...currentMcqs, ...partialMcqs]);
+                }
+              }
+            } catch (e) {
+              // Incomplete JSON, will be completed in the next chunk
+            }
+          }
+        }
+      }
+      
       toast({
         title: "MCQs Generated!",
-        description: `Created ${data.mcqs.length} questions on ${topic}`,
+        description: `Finished creating questions on ${topic}`,
       });
+
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to generate MCQs",
-        variant: "destructive"
+        variant: "destructive",
       });
+      setGenerated(false);
     } finally {
       setLoading(false);
     }
@@ -85,7 +136,7 @@ const GenerateMCQ = () => {
       toast({
         title: "Incomplete",
         description: "Please answer all questions",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -109,14 +160,16 @@ const GenerateMCQ = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("generated_materials").insert([{
-        user_id: user.id,
-        title: `MCQs: ${topic}`,
-        type: "mcqs",
-        difficulty,
-        content: { mcqs, userAnswers, score } as any,
-        metadata: { topic, numQuestions: numQuestions[0] } as any
-      }]);
+      const { error } = await supabase.from("generated_materials").insert([
+        {
+          user_id: user.id,
+          title: `MCQs: ${topic}`,
+          type: "mcqs",
+          difficulty,
+          content: { mcqs, userAnswers, score } as any,
+          metadata: { topic, numQuestions: numQuestions[0] } as any,
+        },
+      ]);
 
       if (error) throw error;
 
@@ -128,20 +181,22 @@ const GenerateMCQ = () => {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
+  };
+  
+  const isComplete = (mcq: MCQ) => {
+    return mcq.question && mcq.options?.length === 4 && mcq.correct !== undefined && mcq.explanation;
   };
 
   return (
     <div className="min-h-screen pt-24 pb-12 relative overflow-hidden">
-      {/* Animated Background */}
       <div className="fixed inset-0 mesh-bg opacity-20" />
       <div className="fixed inset-0 bg-gradient-to-b from-background via-transparent to-background" />
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto space-y-8">
-          {/* Header */}
           <div className="space-y-4">
             <Link to="/generate">
               <Button variant="ghost" size="sm" className="mb-4">
@@ -157,7 +212,6 @@ const GenerateMCQ = () => {
             </p>
           </div>
 
-          {/* Input Form */}
           {!generated ? (
             <Card className="p-8 bg-card/60 backdrop-blur-md border-2 border-border/50 space-y-6">
               <div className="space-y-4">
@@ -220,7 +274,6 @@ const GenerateMCQ = () => {
             </Card>
           ) : (
             <>
-              {/* Generated MCQs */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
@@ -232,7 +285,7 @@ const GenerateMCQ = () => {
                     )}
                   </div>
                   <div className="flex gap-3">
-                    {!submitted && (
+                    {!submitted && !loading && mcqs.every(isComplete) && (
                       <Button onClick={handleSubmit} className="bg-primary hover:bg-primary-glow">
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Submit Answers
@@ -251,7 +304,7 @@ const GenerateMCQ = () => {
                   <Card key={index} className="p-6 bg-card border-border">
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold">
-                        Question {index + 1}: {mcq.question}
+                        Question {index + 1}: {mcq.question || "..."}
                       </h3>
                       
                       <RadioGroup 
@@ -261,9 +314,9 @@ const GenerateMCQ = () => {
                             setUserAnswers(prev => ({ ...prev, [index]: parseInt(value) }));
                           }
                         }}
-                        disabled={submitted}
+                        disabled={submitted || !isComplete(mcq)}
                       >
-                        {mcq.options.map((option, optIndex) => {
+                        {(mcq.options || []).map((option, optIndex) => {
                           const isUserAnswer = userAnswers[index] === optIndex;
                           const isCorrect = optIndex === mcq.correct;
                           const showResult = submitted;
@@ -287,13 +340,13 @@ const GenerateMCQ = () => {
                               <RadioGroupItem 
                                 value={optIndex.toString()} 
                                 id={`q${index}-opt${optIndex}`}
-                                disabled={submitted}
+                                disabled={submitted || !isComplete(mcq)}
                               />
                               <Label 
                                 htmlFor={`q${index}-opt${optIndex}`} 
                                 className="font-normal cursor-pointer flex-1"
                               >
-                                {option}
+                                {option || "..."}
                                 {showResult && isCorrect && (
                                   <span className="ml-2 text-primary font-semibold">✓</span>
                                 )}
@@ -306,7 +359,7 @@ const GenerateMCQ = () => {
                         })}
                       </RadioGroup>
 
-                      {submitted && (
+                      {submitted && isComplete(mcq) && (
                         <div className="pt-2 border-t border-border">
                           <p className="text-sm text-muted-foreground">
                             <span className="font-semibold text-primary">Explanation:</span> {mcq.explanation}
