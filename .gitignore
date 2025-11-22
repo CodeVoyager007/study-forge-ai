@@ -29,3 +29,4 @@ dist-ssr
 # Build and coverage output
 /build
 /coverage
+.vercel

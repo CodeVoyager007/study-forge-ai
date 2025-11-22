@@ -1,22 +1,16 @@
-# Welcome to your Lovable project
+# Study Forge AI
 
-## Project info
+**URL**: https://study-forge-ai-55.vercel.app/
 
-**URL**: https://lovable.dev/projects/829c7863-ac4b-44df-902e-0f7cd7f1fdc9
+Study Forge AI is a powerful web application that leverages artificial intelligence to provide students with a suite of 18 essential study tools. Whether you need to generate flashcards, summarize long texts, or create practice quizzes, Study Forge AI has you covered.
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/829c7863-ac4b-44df-902e-0f7cd7f1fdc9) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes. 
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -24,10 +18,10 @@ Follow these steps:
 
 ```sh
 # Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+git clone https://github.com/YOUR_USERNAME/study-forge-ai-55.git
 
 # Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+cd study-forge-ai-55
 
 # Step 3: Install the necessary dependencies.
 npm i
@@ -59,15 +53,12 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/829c7863-ac4b-44df-902e-0f7cd7f1fdc9) and click on Share -> Publish.
+You can deploy this project to Vercel, Netlify, or any other static site hosting service.
 
-## Can I connect a custom domain to my Lovable project?
+## Can I connect a custom domain to my project?
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Yes, you can connect a custom domain to your project through your hosting provider's dashboard.

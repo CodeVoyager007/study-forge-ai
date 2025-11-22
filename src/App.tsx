@@ -56,25 +56,25 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/generate" element={<ProtectedRoute><Generate /></ProtectedRoute>} />
-            <Route path="/generate/mcqs" element={<ProtectedRoute><GenerateMCQ /></ProtectedRoute>} />
-            <Route path="/generate/flashcards" element={<ProtectedRoute><GenerateFlashcards /></ProtectedRoute>} />
-            <Route path="/generate/summary" element={<ProtectedRoute><GenerateSummary /></ProtectedRoute>} />
-            <Route path="/generate/essay" element={<ProtectedRoute><GenerateEssay /></ProtectedRoute>} />
-            <Route path="/generate/diagram" element={<ProtectedRoute><GenerateDiagram /></ProtectedRoute>} />
-            <Route path="/generate/vocabulary" element={<ProtectedRoute><GenerateVocabulary /></ProtectedRoute>} />
-            <Route path="/generate/formulas" element={<ProtectedRoute><GenerateFormulas /></ProtectedRoute>} />
-            <Route path="/generate/qna" element={<ProtectedRoute><GenerateQna /></ProtectedRoute>} />
-            <Route path="/generate/schedule" element={<ProtectedRoute><GenerateSchedule /></ProtectedRoute>} />
-            <Route path="/generate/notes" element={<ProtectedRoute><GenerateNotes /></ProtectedRoute>} />
-            <Route path="/generate/transcript" element={<ProtectedRoute><GenerateTranscript /></ProtectedRoute>} />
-            <Route path="/generate/case-study" element={<ProtectedRoute><GenerateCaseStudy /></ProtectedRoute>} />
-            <Route path="/generate/memory-palace" element={<ProtectedRoute><GenerateMemoryPalace /></ProtectedRoute>} />
-            <Route path="/generate/debate" element={<ProtectedRoute><GenerateDebate /></ProtectedRoute>} />
-            <Route path="/generate/comparison" element={<ProtectedRoute><GenerateComparison /></ProtectedRoute>} />
-            <Route path="/generate/true-false" element={<ProtectedRoute><GenerateTrueFalse /></ProtectedRoute>} />
-            <Route path="/generate/fill-blanks" element={<ProtectedRoute><GenerateFillBlanks /></ProtectedRoute>} />
-            <Route path="/generate/mnemonics" element={<ProtectedRoute><GenerateMnemonics /></ProtectedRoute>} />
+            <Route path="/generate" element={<Generate />} />
+            <Route path="/generate/mcqs" element={<GenerateMCQ />} />
+            <Route path="/generate/flashcards" element={<GenerateFlashcards />} />
+            <Route path="/generate/summary" element={<GenerateSummary />} />
+            <Route path="/generate/essay" element={<GenerateEssay />} />
+            <Route path="/generate/diagram" element={<GenerateDiagram />} />
+            <Route path="/generate/vocabulary" element={<GenerateVocabulary />} />
+            <Route path="/generate/formulas" element={<GenerateFormulas />} />
+            <Route path="/generate/qna" element={<GenerateQna />} />
+            <Route path="/generate/schedule" element={<GenerateSchedule />} />
+            <Route path="/generate/notes" element={<GenerateNotes />} />
+            <Route path="/generate/transcript" element={<GenerateTranscript />} />
+            <Route path="/generate/case-study" element={<GenerateCaseStudy />} />
+            <Route path="/generate/memory-palace" element={<GenerateMemoryPalace />} />
+            <Route path="/generate/debate" element={<GenerateDebate />} />
+            <Route path="/generate/comparison" element={<GenerateComparison />} />
+            <Route path="/generate/true-false" element={<GenerateTrueFalse />} />
+            <Route path="/generate/fill-blanks" element={<GenerateFillBlanks />} />
+            <Route path="/generate/mnemonics" element={<GenerateMnemonics />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}>
               <Route index element={<Overview />} />
               <Route path="overview" element={<Overview />} />
